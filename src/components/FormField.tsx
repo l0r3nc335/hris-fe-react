@@ -1,0 +1,19 @@
+import { Label } from '@/ui'
+
+export function FormField({
+  label,
+  error,
+  children,
+}: {
+  label: string
+  error?: string
+  children: React.ReactNode
+}): React.JSX.Element {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      {children}
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+    </div>
+  )
+}
