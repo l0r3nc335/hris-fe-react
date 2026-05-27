@@ -1,13 +1,19 @@
+import type { ReactNode } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { cn } from '@/utils/cn'
 
-export function Dropdown({
-  trigger,
-  items,
-}: {
-  trigger: React.ReactNode
-  items: { label: string; onSelect: () => void; destructive?: boolean }[]
-}): React.JSX.Element {
+export interface DropdownItem {
+  label: string
+  onSelect: () => void
+  destructive?: boolean
+}
+
+export interface DropdownProps {
+  trigger: ReactNode
+  items: DropdownItem[]
+}
+
+export function Dropdown({ trigger, items }: DropdownProps): React.JSX.Element {
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>{trigger}</DropdownMenu.Trigger>

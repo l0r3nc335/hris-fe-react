@@ -1,13 +1,19 @@
+import type { ReactNode } from 'react'
 import * as TabsPrimitive from '@radix-ui/react-tabs'
 import { cn } from '@/utils/cn'
 
-export function Tabs({
-  defaultValue,
-  items,
-}: {
+export interface TabsItem {
+  value: string
+  label: string
+  content: ReactNode
+}
+
+export interface TabsProps {
   defaultValue: string
-  items: { value: string; label: string; content: React.ReactNode }[]
-}): React.JSX.Element {
+  items: TabsItem[]
+}
+
+export function Tabs({ defaultValue, items }: TabsProps): React.JSX.Element {
   return (
     <TabsPrimitive.Root defaultValue={defaultValue}>
       <TabsPrimitive.List className="inline-flex h-10 items-center gap-1 rounded-md bg-muted p-1">

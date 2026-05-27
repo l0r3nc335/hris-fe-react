@@ -5,11 +5,13 @@ import { usePermission } from '@/hooks/usePermission'
 import type { Permission } from '@/constants/permissions'
 import { ROUTES } from '@/constants/routes'
 
+export interface ProtectedRouteProps {
+  permissions?: Permission[]
+}
+
 export function ProtectedRoute({
   permissions,
-}: {
-  permissions?: Permission[]
-}): React.JSX.Element {
+}: ProtectedRouteProps): React.JSX.Element {
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
   const { can } = usePermission()
 

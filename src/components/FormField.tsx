@@ -1,14 +1,17 @@
+import type { ReactNode } from 'react'
 import { Label } from '@/ui'
+
+export interface FormFieldProps {
+  label: string
+  error?: string
+  children: ReactNode
+}
 
 export function FormField({
   label,
   error,
   children,
-}: {
-  label: string
-  error?: string
-  children: React.ReactNode
-}): React.JSX.Element {
+}: FormFieldProps): React.JSX.Element {
   return (
     <div className="space-y-2">
       <Label>{label}</Label>

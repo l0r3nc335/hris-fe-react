@@ -1,7 +1,17 @@
+import type { ReactNode } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { Button } from './Button'
+
+export interface ModalProps {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  title: string
+  description?: string
+  children: ReactNode
+  trigger?: ReactNode
+}
 
 export function Modal({
   open,
@@ -10,14 +20,7 @@ export function Modal({
   description,
   children,
   trigger,
-}: {
-  open?: boolean
-  onOpenChange?: (open: boolean) => void
-  title: string
-  description?: string
-  children: React.ReactNode
-  trigger?: React.ReactNode
-}): React.JSX.Element {
+}: ModalProps): React.JSX.Element {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       {trigger ? <Dialog.Trigger asChild>{trigger}</Dialog.Trigger> : null}

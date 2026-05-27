@@ -1,4 +1,4 @@
-import { Suspense } from 'react'
+import { Suspense, type ReactNode } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AuthLayout } from '@/layouts/AuthLayout'
 import { DashboardLayout } from '@/layouts/DashboardLayout'
@@ -7,7 +7,11 @@ import { PageLoader } from '@/components/PageLoader'
 import { ROUTES } from '@/constants/routes'
 import * as Lazy from './lazyRoutes'
 
-function SuspenseWrap({ children }: { children: React.ReactNode }): React.JSX.Element {
+interface SuspenseWrapProps {
+  children: ReactNode
+}
+
+function SuspenseWrap({ children }: SuspenseWrapProps): React.JSX.Element {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>
 }
 

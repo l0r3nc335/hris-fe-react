@@ -1,17 +1,21 @@
+import type { ReactNode } from 'react'
 import * as TooltipPrimitive from '@radix-ui/react-tooltip'
 import { cn } from '@/utils/cn'
 
-export function TooltipProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
+export interface TooltipProviderProps {
+  children: ReactNode
+}
+
+export function TooltipProvider({ children }: TooltipProviderProps): React.JSX.Element {
   return <TooltipPrimitive.Provider>{children}</TooltipPrimitive.Provider>
 }
 
-export function Tooltip({
-  content,
-  children,
-}: {
+export interface TooltipProps {
   content: string
-  children: React.ReactNode
-}): React.JSX.Element {
+  children: ReactNode
+}
+
+export function Tooltip({ content, children }: TooltipProps): React.JSX.Element {
   return (
     <TooltipPrimitive.Root>
       <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>

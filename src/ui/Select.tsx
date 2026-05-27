@@ -2,17 +2,24 @@ import * as SelectPrimitive from '@radix-ui/react-select'
 import { ChevronDown } from 'lucide-react'
 import { cn } from '@/utils/cn'
 
+export interface SelectOption {
+  value: string
+  label: string
+}
+
+export interface SelectProps {
+  value?: string
+  onValueChange?: (value: string) => void
+  placeholder?: string
+  options: SelectOption[]
+}
+
 export function Select({
   value,
   onValueChange,
   placeholder,
   options,
-}: {
-  value?: string
-  onValueChange?: (value: string) => void
-  placeholder?: string
-  options: { value: string; label: string }[]
-}): React.JSX.Element {
+}: SelectProps): React.JSX.Element {
   return (
     <SelectPrimitive.Root value={value} onValueChange={onValueChange}>
       <SelectPrimitive.Trigger

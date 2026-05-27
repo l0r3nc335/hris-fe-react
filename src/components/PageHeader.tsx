@@ -1,12 +1,16 @@
+import type { ReactNode } from 'react'
+
+export interface PageHeaderProps {
+  title: string
+  description?: string
+  action?: ReactNode
+}
+
 export function PageHeader({
   title,
   description,
   action,
-}: {
-  title: string
-  description?: string
-  action?: React.ReactNode
-}): React.JSX.Element {
+}: PageHeaderProps): React.JSX.Element {
   return (
     <div className="mb-6 flex items-start justify-between gap-4">
       <div>
