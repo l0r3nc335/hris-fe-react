@@ -1,14 +1,15 @@
-import { httpClient } from '@/services/httpClient'
 import { endpoints } from '@/constants/endpoints'
-import type { ApiResponse } from '@/types/api'
+import { createMutableResourceApi } from './client'
 import type { CompensationEntity } from '@/modules/compensation/types'
 
-export async function listCompensation(): Promise<CompensationEntity[]> {
-  const res = await httpClient.get<ApiResponse<CompensationEntity[]>>(endpoints.compensation.list)
-  return res.data.data
-}
+const api = createMutableResourceApi<CompensationEntity>({
+  list: endpoints.compensation.list,
+  byId: endpoints.compensation.byId,
+  trashed: endpoints.compensation.trashed,
+  softDelete: endpoints.compensation.softDelete,
+  restore: endpoints.compensation.restore,
+})
 
-export async function getCompensation(id: string): Promise<CompensationEntity> {
-  const res = await httpClient.get<ApiResponse<CompensationEntity>>(endpoints.compensation.byId(id))
-  return res.data.data
-}
+export const listCompensation = api.list
+export const getCompensation = api.getById
+export const compensationApi = api

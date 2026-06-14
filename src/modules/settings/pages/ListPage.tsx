@@ -1,34 +1,39 @@
-import { PageHeader } from '@/components/PageHeader'
-import { EmptyState } from '@/components/EmptyState'
-import { PageLoader } from '@/components/PageLoader'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui'
-import { useSettingsList } from '../hooks'
+import { EntityListPage } from '@/components/EntityListPage'
+import { EntityFormDialog } from '@/components/EntityFormDialog'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { useEntityCrudPage } from '@/hooks/useEntityCrudPage'
+import {
+  useSettingsList,
+  useSettingsTrashedList,
+  useCreateSettings,
+  useUpdateSettings,
+  useSoftDeleteSettings,
+  useRestoreSettings,
+  useRemoveSettings,
+} from '../hooks'
 
 export function SettingsListPage(): React.JSX.Element {
-  const { items, status } = useSettingsList()
-
-  if (status === 'loading') return <PageLoader />
-  if (items.length === 0) return <EmptyState title="No settings found" />
+  const crud = useEntityCrudPage({
+    title: 'Settings',
+    description: 'Manage settings records',
+    emptyTitle: 'No settings found',
+    entitySingular: 'setting',
+    hooks: {
+      useList: useSettingsList,
+      useTrashedList: useSettingsTrashedList,
+      useCreate: useCreateSettings,
+      useUpdate: useUpdateSettings,
+      useSoftDelete: useSoftDeleteSettings,
+      useRestore: useRestoreSettings,
+      useRemove: useRemoveSettings,
+    },
+  })
 
   return (
-    <div>
-      <PageHeader title="Settings" description="Manage settings records" />
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Status</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell>{item.name}</TableCell>
-              <TableCell>{item.status}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <>
+      <EntityListPage {...crud.listPageProps} />
+      <EntityFormDialog {...crud.formDialogProps} />
+      <ConfirmDialog {...crud.confirmDialogProps} />
+    </>
   )
 }

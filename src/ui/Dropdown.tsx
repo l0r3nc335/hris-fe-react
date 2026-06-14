@@ -1,6 +1,11 @@
 import type { ReactNode } from 'react'
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { cn } from '@/utils/cn'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { cn } from '@/lib/utils'
 
 export interface DropdownItem {
   label: string
@@ -15,27 +20,19 @@ export interface DropdownProps {
 
 export function Dropdown({ trigger, items }: DropdownProps): React.JSX.Element {
   return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild>{trigger}</DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          className="z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-card p-1 shadow-md"
-          sideOffset={4}
-        >
-          {items.map((item) => (
-            <DropdownMenu.Item
-              key={item.label}
-              className={cn(
-                'cursor-pointer rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent',
-                item.destructive && 'text-destructive',
-              )}
-              onSelect={item.onSelect}
-            >
-              {item.label}
-            </DropdownMenu.Item>
-          ))}
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+      <DropdownMenuContent>
+        {items.map((item) => (
+          <DropdownMenuItem
+            key={item.label}
+            className={cn(item.destructive && 'text-destructive')}
+            onSelect={item.onSelect}
+          >
+            {item.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

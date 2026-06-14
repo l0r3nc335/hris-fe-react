@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
-import * as TabsPrimitive from '@radix-ui/react-tabs'
-import { cn } from '@/utils/cn'
+import { Tabs as TabsRoot, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export interface TabsItem {
   value: string
@@ -15,25 +14,19 @@ export interface TabsProps {
 
 export function Tabs({ defaultValue, items }: TabsProps): React.JSX.Element {
   return (
-    <TabsPrimitive.Root defaultValue={defaultValue}>
-      <TabsPrimitive.List className="inline-flex h-10 items-center gap-1 rounded-md bg-muted p-1">
+    <TabsRoot defaultValue={defaultValue}>
+      <TabsList>
         {items.map((item) => (
-          <TabsPrimitive.Trigger
-            key={item.value}
-            value={item.value}
-            className={cn(
-              'inline-flex items-center justify-center rounded-sm px-3 py-1.5 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm',
-            )}
-          >
+          <TabsTrigger key={item.value} value={item.value}>
             {item.label}
-          </TabsPrimitive.Trigger>
+          </TabsTrigger>
         ))}
-      </TabsPrimitive.List>
+      </TabsList>
       {items.map((item) => (
-        <TabsPrimitive.Content key={item.value} value={item.value} className="mt-4">
+        <TabsContent key={item.value} value={item.value}>
           {item.content}
-        </TabsPrimitive.Content>
+        </TabsContent>
       ))}
-    </TabsPrimitive.Root>
+    </TabsRoot>
   )
 }

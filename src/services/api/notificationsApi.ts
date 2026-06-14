@@ -1,14 +1,15 @@
-import { httpClient } from '@/services/httpClient'
 import { endpoints } from '@/constants/endpoints'
-import type { ApiResponse } from '@/types/api'
+import { createMutableResourceApi } from './client'
 import type { NotificationsEntity } from '@/modules/notifications/types'
 
-export async function listNotifications(): Promise<NotificationsEntity[]> {
-  const res = await httpClient.get<ApiResponse<NotificationsEntity[]>>(endpoints.notifications.list)
-  return res.data.data
-}
+const api = createMutableResourceApi<NotificationsEntity>({
+  list: endpoints.notifications.list,
+  byId: endpoints.notifications.byId,
+  trashed: endpoints.notifications.trashed,
+  softDelete: endpoints.notifications.softDelete,
+  restore: endpoints.notifications.restore,
+})
 
-export async function getNotifications(id: string): Promise<NotificationsEntity> {
-  const res = await httpClient.get<ApiResponse<NotificationsEntity>>(endpoints.notifications.byId(id))
-  return res.data.data
-}
+export const listNotifications = api.list
+export const getNotifications = api.getById
+export const notificationsApi = api

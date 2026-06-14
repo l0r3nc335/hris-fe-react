@@ -1,14 +1,12 @@
-import { httpClient } from '@/services/httpClient'
 import { endpoints } from '@/constants/endpoints'
-import type { ApiResponse } from '@/types/api'
+import { createResourceApi } from './client'
 import type { SystemEntity } from '@/modules/system/types'
 
-export async function listSystem(): Promise<SystemEntity[]> {
-  const res = await httpClient.get<ApiResponse<SystemEntity[]>>(endpoints.system.list)
-  return res.data.data
-}
+const api = createResourceApi<SystemEntity>({
+  list: endpoints.system.list,
+  byId: endpoints.system.byId,
+})
 
-export async function getSystem(id: string): Promise<SystemEntity> {
-  const res = await httpClient.get<ApiResponse<SystemEntity>>(endpoints.system.byId(id))
-  return res.data.data
-}
+export const listSystem = api.list
+export const getSystem = api.getById
+export const systemApi = api

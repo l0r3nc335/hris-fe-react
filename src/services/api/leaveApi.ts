@@ -1,14 +1,15 @@
-import { httpClient } from '@/services/httpClient'
 import { endpoints } from '@/constants/endpoints'
-import type { ApiResponse } from '@/types/api'
+import { createMutableResourceApi } from './client'
 import type { LeaveEntity } from '@/modules/leave/types'
 
-export async function listLeave(): Promise<LeaveEntity[]> {
-  const res = await httpClient.get<ApiResponse<LeaveEntity[]>>(endpoints.leave.list)
-  return res.data.data
-}
+const api = createMutableResourceApi<LeaveEntity>({
+  list: endpoints.leave.list,
+  byId: endpoints.leave.byId,
+  trashed: endpoints.leave.trashed,
+  softDelete: endpoints.leave.softDelete,
+  restore: endpoints.leave.restore,
+})
 
-export async function getLeave(id: string): Promise<LeaveEntity> {
-  const res = await httpClient.get<ApiResponse<LeaveEntity>>(endpoints.leave.byId(id))
-  return res.data.data
-}
+export const listLeave = api.list
+export const getLeave = api.getById
+export const leaveApi = api

@@ -1,14 +1,15 @@
-import { httpClient } from '@/services/httpClient'
 import { endpoints } from '@/constants/endpoints'
-import type { ApiResponse } from '@/types/api'
+import { createMutableResourceApi } from './client'
 import type { AttendanceEntity } from '@/modules/attendance/types'
 
-export async function listAttendance(): Promise<AttendanceEntity[]> {
-  const res = await httpClient.get<ApiResponse<AttendanceEntity[]>>(endpoints.attendance.list)
-  return res.data.data
-}
+const api = createMutableResourceApi<AttendanceEntity>({
+  list: endpoints.attendance.list,
+  byId: endpoints.attendance.byId,
+  trashed: endpoints.attendance.trashed,
+  softDelete: endpoints.attendance.softDelete,
+  restore: endpoints.attendance.restore,
+})
 
-export async function getAttendance(id: string): Promise<AttendanceEntity> {
-  const res = await httpClient.get<ApiResponse<AttendanceEntity>>(endpoints.attendance.byId(id))
-  return res.data.data
-}
+export const listAttendance = api.list
+export const getAttendance = api.getById
+export const attendanceApi = api

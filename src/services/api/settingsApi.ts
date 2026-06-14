@@ -1,14 +1,15 @@
-import { httpClient } from '@/services/httpClient'
 import { endpoints } from '@/constants/endpoints'
-import type { ApiResponse } from '@/types/api'
+import { createMutableResourceApi } from './client'
 import type { SettingsEntity } from '@/modules/settings/types'
 
-export async function listSettings(): Promise<SettingsEntity[]> {
-  const res = await httpClient.get<ApiResponse<SettingsEntity[]>>(endpoints.settings.list)
-  return res.data.data
-}
+const api = createMutableResourceApi<SettingsEntity>({
+  list: endpoints.settings.list,
+  byId: endpoints.settings.byId,
+  trashed: endpoints.settings.trashed,
+  softDelete: endpoints.settings.softDelete,
+  restore: endpoints.settings.restore,
+})
 
-export async function getSettings(id: string): Promise<SettingsEntity> {
-  const res = await httpClient.get<ApiResponse<SettingsEntity>>(endpoints.settings.byId(id))
-  return res.data.data
-}
+export const listSettings = api.list
+export const getSettings = api.getById
+export const settingsApi = api

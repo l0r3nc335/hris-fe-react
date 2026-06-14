@@ -1,14 +1,7 @@
 import type { ReactNode } from 'react'
-import * as TooltipPrimitive from '@radix-ui/react-tooltip'
-import { cn } from '@/utils/cn'
+import { Tooltip as TooltipRoot, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
-export interface TooltipProviderProps {
-  children: ReactNode
-}
-
-export function TooltipProvider({ children }: TooltipProviderProps): React.JSX.Element {
-  return <TooltipPrimitive.Provider>{children}</TooltipPrimitive.Provider>
-}
+export { TooltipProvider } from '@/components/ui/tooltip'
 
 export interface TooltipProps {
   content: string
@@ -17,18 +10,9 @@ export interface TooltipProps {
 
 export function Tooltip({ content, children }: TooltipProps): React.JSX.Element {
   return (
-    <TooltipPrimitive.Root>
-      <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
-      <TooltipPrimitive.Portal>
-        <TooltipPrimitive.Content
-          className={cn(
-            'z-50 overflow-hidden rounded-md border border-border bg-card px-3 py-1.5 text-xs shadow-md',
-          )}
-          sideOffset={4}
-        >
-          {content}
-        </TooltipPrimitive.Content>
-      </TooltipPrimitive.Portal>
-    </TooltipPrimitive.Root>
+    <TooltipRoot>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent>{content}</TooltipContent>
+    </TooltipRoot>
   )
 }

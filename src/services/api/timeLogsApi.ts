@@ -1,14 +1,15 @@
-import { httpClient } from '@/services/httpClient'
 import { endpoints } from '@/constants/endpoints'
-import type { ApiResponse } from '@/types/api'
+import { createMutableResourceApi } from './client'
 import type { TimeTrackingEntity } from '@/modules/timeTracking/types'
 
-export async function listTimeTracking(): Promise<TimeTrackingEntity[]> {
-  const res = await httpClient.get<ApiResponse<TimeTrackingEntity[]>>(endpoints.timeTracking.list)
-  return res.data.data
-}
+const api = createMutableResourceApi<TimeTrackingEntity>({
+  list: endpoints.timeTracking.list,
+  byId: endpoints.timeTracking.byId,
+  trashed: endpoints.timeTracking.trashed,
+  softDelete: endpoints.timeTracking.softDelete,
+  restore: endpoints.timeTracking.restore,
+})
 
-export async function getTimeTracking(id: string): Promise<TimeTrackingEntity> {
-  const res = await httpClient.get<ApiResponse<TimeTrackingEntity>>(endpoints.timeTracking.byId(id))
-  return res.data.data
-}
+export const listTimeTracking = api.list
+export const getTimeTracking = api.getById
+export const timeTrackingApi = api

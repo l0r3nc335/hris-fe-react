@@ -1,14 +1,15 @@
-import { httpClient } from '@/services/httpClient'
 import { endpoints } from '@/constants/endpoints'
-import type { ApiResponse } from '@/types/api'
+import { createMutableResourceApi } from './client'
 import type { PayrollEntity } from '@/modules/payroll/types'
 
-export async function listPayroll(): Promise<PayrollEntity[]> {
-  const res = await httpClient.get<ApiResponse<PayrollEntity[]>>(endpoints.payroll.list)
-  return res.data.data
-}
+const api = createMutableResourceApi<PayrollEntity>({
+  list: endpoints.payroll.list,
+  byId: endpoints.payroll.byId,
+  trashed: endpoints.payroll.trashed,
+  softDelete: endpoints.payroll.softDelete,
+  restore: endpoints.payroll.restore,
+})
 
-export async function getPayroll(id: string): Promise<PayrollEntity> {
-  const res = await httpClient.get<ApiResponse<PayrollEntity>>(endpoints.payroll.byId(id))
-  return res.data.data
-}
+export const listPayroll = api.list
+export const getPayroll = api.getById
+export const payrollApi = api

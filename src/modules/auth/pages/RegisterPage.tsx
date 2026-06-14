@@ -1,14 +1,129 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Link, useNavigate } from 'react-router-dom'
+import { register as registerApi } from '@/services/api/authApi'
+import { Button } from '@/ui'
+import { Input } from '@/ui'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { ROUTES } from '@/constants/routes'
+import { registerSchema, type RegisterFormData } from '../schemas'
 
 export function RegisterPage(): React.JSX.Element {
+  const navigate = useNavigate()
+  const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const form = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { firstName: '', lastName: '', email: '', password: '' },
+  })
+
+  const onSubmit = (data: RegisterFormData): void => {
+    setError(null)
+    setIsSubmitting(true)
+    void registerApi(data)
+      .then(() => {
+        navigate(ROUTES.login)
+      })
+      .catch(() => {
+        setError('Registration failed. Please try again.')
+      })
+      .finally(() => {
+        setIsSubmitting(false)
+      })
+  }
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold">Register</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Registration form scaffold — connect to auth/register API.</p>
-      <Link to={ROUTES.login} className="mt-4 inline-block text-sm text-primary hover:underline">
-        Back to login
-      </Link>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-2xl">Register</CardTitle>
+        <CardDescription>Create your HRIS account</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              void form.handleSubmit(onSubmit)(e)
+            }}
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>First name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input type="email" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {error ? (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            ) : null}
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? 'Creating account...' : 'Create account'}
+            </Button>
+          </form>
+        </Form>
+        <Link to={ROUTES.login} className="mt-4 inline-block text-sm text-primary hover:underline">
+          Back to login
+        </Link>
+      </CardContent>
+    </Card>
   )
 }

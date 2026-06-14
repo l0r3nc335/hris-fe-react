@@ -1,6 +1,6 @@
 # HRIS Enterprise Frontend
 
-React + TypeScript + Tailwind CSS + Redux Toolkit + Radix UI HRIS frontend aligned to `/api/v1` backend contract.
+React + TypeScript + Tailwind CSS + Redux Toolkit + TanStack Query + Axios HRIS frontend aligned to `/api/v1` backend contract.
 
 This is a **standalone Git repository**. The NestJS API lives in a separate repo (typically cloned as a sibling `BE/` folder in your local workspace).
 
@@ -12,17 +12,16 @@ cp .env.example .env
 npm run dev
 ```
 
-Demo login with MSW mocks (`VITE_USE_MOCKS=true`): `admin@hris.com` / `password`
-
 ### Using the real API
 
-1. Clone and run the [backend repo](../BE/) (or your `hris-api` remote) on `http://localhost:3000`
+1. Start the backend (see `../BE/README.md`): PostgreSQL, migrate, seed, then `npm run start:dev` on `http://localhost:3000`
 2. In this repo's `.env`:
 
 ```
 VITE_API_BASE_URL=http://localhost:3000
-VITE_USE_MOCKS=false
 ```
+
+3. Login with seeded credentials: `admin@hris.com` / `password`
 
 ## Scripts
 
@@ -37,15 +36,14 @@ VITE_USE_MOCKS=false
 ## Architecture
 
 - `src/modules/*` — feature domains (isolated; no cross-module imports)
-- `src/slices/*` — Redux Toolkit slices + thunks
-- `src/services/api/*` — typed HTTP API layer
+- `src/slices/*` — Redux Toolkit auth session
+- `src/services/api/*` — typed Axios API layer with `createResourceApi`
+- `src/queries/*` — TanStack Query hooks and mutations
 - `src/ui/*` — design system (Radix + Tailwind)
-- `src/services/mocks/*` — MSW handlers when `VITE_USE_MOCKS=true`
 
 ## Environment
 
 | Variable | Description |
 |----------|-------------|
 | `VITE_API_BASE_URL` | Backend origin (default `http://localhost:3000`) |
-| `VITE_USE_MOCKS` | Enable MSW mock API (`true` for local dev without BE) |
 | `VITE_SENTRY_DSN` | Optional Sentry DSN |

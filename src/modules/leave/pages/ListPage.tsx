@@ -1,34 +1,39 @@
-import { PageHeader } from '@/components/PageHeader'
-import { EmptyState } from '@/components/EmptyState'
-import { PageLoader } from '@/components/PageLoader'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui'
-import { useLeaveList } from '../hooks'
+import { EntityListPage } from '@/components/EntityListPage'
+import { EntityFormDialog } from '@/components/EntityFormDialog'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { useEntityCrudPage } from '@/hooks/useEntityCrudPage'
+import {
+  useLeaveList,
+  useLeaveTrashedList,
+  useCreateLeave,
+  useUpdateLeave,
+  useSoftDeleteLeave,
+  useRestoreLeave,
+  useRemoveLeave,
+} from '../hooks'
 
 export function LeaveListPage(): React.JSX.Element {
-  const { items, status } = useLeaveList()
-
-  if (status === 'loading') return <PageLoader />
-  if (items.length === 0) return <EmptyState title="No leave found" />
+  const crud = useEntityCrudPage({
+    title: 'Leave',
+    description: 'Manage leave records',
+    emptyTitle: 'No leave found',
+    entitySingular: 'leave request',
+    hooks: {
+      useList: useLeaveList,
+      useTrashedList: useLeaveTrashedList,
+      useCreate: useCreateLeave,
+      useUpdate: useUpdateLeave,
+      useSoftDelete: useSoftDeleteLeave,
+      useRestore: useRestoreLeave,
+      useRemove: useRemoveLeave,
+    },
+  })
 
   return (
-    <div>
-      <PageHeader title="Leave" description="Manage leave records" />
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Status</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell>{item.name}</TableCell>
-              <TableCell>{item.status}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <>
+      <EntityListPage {...crud.listPageProps} />
+      <EntityFormDialog {...crud.formDialogProps} />
+      <ConfirmDialog {...crud.confirmDialogProps} />
+    </>
   )
 }

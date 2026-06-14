@@ -1,6 +1,5 @@
-import { httpClient } from '@/services/httpClient'
 import { endpoints } from '@/constants/endpoints'
-import type { ApiResponse } from '@/types/api'
+import { apiGet } from './client'
 
 export interface DashboardMetric {
   label: string
@@ -12,6 +11,5 @@ export interface DashboardData {
 }
 
 export async function getDashboard(): Promise<DashboardData> {
-  const res = await httpClient.get<ApiResponse<DashboardData>>(endpoints.analytics.dashboard)
-  return res.data.data
+  return apiGet<DashboardData>(endpoints.analytics.dashboard)
 }

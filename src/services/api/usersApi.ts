@@ -1,14 +1,19 @@
-import { httpClient } from '@/services/httpClient'
 import { endpoints } from '@/constants/endpoints'
-import type { ApiResponse } from '@/types/api'
+import { createMutableResourceApi } from './client'
 import type { UsersEntity } from '@/modules/users/types'
 
-export async function listUsers(): Promise<UsersEntity[]> {
-  const res = await httpClient.get<ApiResponse<UsersEntity[]>>(endpoints.users.list)
-  return res.data.data
-}
+export const usersApi = createMutableResourceApi<UsersEntity>({
+  list: endpoints.users.list,
+  byId: endpoints.users.byId,
+  trashed: endpoints.users.trashed,
+  softDelete: endpoints.users.softDelete,
+  restore: endpoints.users.restore,
+  deactivate: endpoints.users.deactivate,
+  reactivate: endpoints.users.reactivate,
+})
 
-export async function getUsers(id: string): Promise<UsersEntity> {
-  const res = await httpClient.get<ApiResponse<UsersEntity>>(endpoints.users.byId(id))
-  return res.data.data
-}
+export const listUsers = usersApi.list
+export const getUsers = usersApi.getById
+export const createUser = usersApi.create
+export const updateUser = usersApi.update
+export const removeUser = usersApi.remove

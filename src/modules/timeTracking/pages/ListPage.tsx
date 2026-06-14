@@ -1,34 +1,39 @@
-import { PageHeader } from '@/components/PageHeader'
-import { EmptyState } from '@/components/EmptyState'
-import { PageLoader } from '@/components/PageLoader'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui'
-import { useTimeTrackingList } from '../hooks'
+import { EntityListPage } from '@/components/EntityListPage'
+import { EntityFormDialog } from '@/components/EntityFormDialog'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { useEntityCrudPage } from '@/hooks/useEntityCrudPage'
+import {
+  useTimeTrackingList,
+  useTimeTrackingTrashedList,
+  useCreateTimeTracking,
+  useUpdateTimeTracking,
+  useSoftDeleteTimeTracking,
+  useRestoreTimeTracking,
+  useRemoveTimeTracking,
+} from '../hooks'
 
 export function TimeTrackingListPage(): React.JSX.Element {
-  const { items, status } = useTimeTrackingList()
-
-  if (status === 'loading') return <PageLoader />
-  if (items.length === 0) return <EmptyState title="No time tracking found" />
+  const crud = useEntityCrudPage({
+    title: 'Time Tracking',
+    description: 'Manage time tracking records',
+    emptyTitle: 'No time tracking found',
+    entitySingular: 'time log',
+    hooks: {
+      useList: useTimeTrackingList,
+      useTrashedList: useTimeTrackingTrashedList,
+      useCreate: useCreateTimeTracking,
+      useUpdate: useUpdateTimeTracking,
+      useSoftDelete: useSoftDeleteTimeTracking,
+      useRestore: useRestoreTimeTracking,
+      useRemove: useRemoveTimeTracking,
+    },
+  })
 
   return (
-    <div>
-      <PageHeader title="Time Tracking" description="Manage time tracking records" />
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Status</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell>{item.name}</TableCell>
-              <TableCell>{item.status}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <>
+      <EntityListPage {...crud.listPageProps} />
+      <EntityFormDialog {...crud.formDialogProps} />
+      <ConfirmDialog {...crud.confirmDialogProps} />
+    </>
   )
 }

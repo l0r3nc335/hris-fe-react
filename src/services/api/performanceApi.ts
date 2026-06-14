@@ -1,14 +1,15 @@
-import { httpClient } from '@/services/httpClient'
 import { endpoints } from '@/constants/endpoints'
-import type { ApiResponse } from '@/types/api'
+import { createMutableResourceApi } from './client'
 import type { PerformanceEntity } from '@/modules/performance/types'
 
-export async function listPerformance(): Promise<PerformanceEntity[]> {
-  const res = await httpClient.get<ApiResponse<PerformanceEntity[]>>(endpoints.performance.list)
-  return res.data.data
-}
+const api = createMutableResourceApi<PerformanceEntity>({
+  list: endpoints.performance.list,
+  byId: endpoints.performance.byId,
+  trashed: endpoints.performance.trashed,
+  softDelete: endpoints.performance.softDelete,
+  restore: endpoints.performance.restore,
+})
 
-export async function getPerformance(id: string): Promise<PerformanceEntity> {
-  const res = await httpClient.get<ApiResponse<PerformanceEntity>>(endpoints.performance.byId(id))
-  return res.data.data
-}
+export const listPerformance = api.list
+export const getPerformance = api.getById
+export const performanceApi = api

@@ -1,34 +1,39 @@
-import { PageHeader } from '@/components/PageHeader'
-import { EmptyState } from '@/components/EmptyState'
-import { PageLoader } from '@/components/PageLoader'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui'
-import { useNotificationsList } from '../hooks'
+import { EntityListPage } from '@/components/EntityListPage'
+import { EntityFormDialog } from '@/components/EntityFormDialog'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { useEntityCrudPage } from '@/hooks/useEntityCrudPage'
+import {
+  useNotificationsList,
+  useNotificationsTrashedList,
+  useCreateNotification,
+  useUpdateNotification,
+  useSoftDeleteNotification,
+  useRestoreNotification,
+  useRemoveNotification,
+} from '../hooks'
 
 export function NotificationsListPage(): React.JSX.Element {
-  const { items, status } = useNotificationsList()
-
-  if (status === 'loading') return <PageLoader />
-  if (items.length === 0) return <EmptyState title="No notifications found" />
+  const crud = useEntityCrudPage({
+    title: 'Notifications',
+    description: 'Manage notifications records',
+    emptyTitle: 'No notifications found',
+    entitySingular: 'notification',
+    hooks: {
+      useList: useNotificationsList,
+      useTrashedList: useNotificationsTrashedList,
+      useCreate: useCreateNotification,
+      useUpdate: useUpdateNotification,
+      useSoftDelete: useSoftDeleteNotification,
+      useRestore: useRestoreNotification,
+      useRemove: useRemoveNotification,
+    },
+  })
 
   return (
-    <div>
-      <PageHeader title="Notifications" description="Manage notifications records" />
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Status</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell>{item.name}</TableCell>
-              <TableCell>{item.status}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <>
+      <EntityListPage {...crud.listPageProps} />
+      <EntityFormDialog {...crud.formDialogProps} />
+      <ConfirmDialog {...crud.confirmDialogProps} />
+    </>
   )
 }

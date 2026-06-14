@@ -1,14 +1,12 @@
-import { httpClient } from '@/services/httpClient'
 import { endpoints } from '@/constants/endpoints'
-import type { ApiResponse } from '@/types/api'
+import { createResourceApi } from './client'
 import type { ReportsEntity } from '@/modules/reports/types'
 
-export async function listReports(): Promise<ReportsEntity[]> {
-  const res = await httpClient.get<ApiResponse<ReportsEntity[]>>(endpoints.reports.list)
-  return res.data.data
-}
+const api = createResourceApi<ReportsEntity>({
+  list: endpoints.reports.list,
+  byId: endpoints.reports.byId,
+})
 
-export async function getReports(id: string): Promise<ReportsEntity> {
-  const res = await httpClient.get<ApiResponse<ReportsEntity>>(endpoints.reports.byId(id))
-  return res.data.data
-}
+export const listReports = api.list
+export const getReports = api.getById
+export const reportsApi = api

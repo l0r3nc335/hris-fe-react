@@ -1,14 +1,15 @@
-import { httpClient } from '@/services/httpClient'
 import { endpoints } from '@/constants/endpoints'
-import type { ApiResponse } from '@/types/api'
+import { createMutableResourceApi } from './client'
 import type { PositionsEntity } from '@/modules/positions/types'
 
-export async function listPositions(): Promise<PositionsEntity[]> {
-  const res = await httpClient.get<ApiResponse<PositionsEntity[]>>(endpoints.positions.list)
-  return res.data.data
-}
+const api = createMutableResourceApi<PositionsEntity>({
+  list: endpoints.positions.list,
+  byId: endpoints.positions.byId,
+  trashed: endpoints.positions.trashed,
+  softDelete: endpoints.positions.softDelete,
+  restore: endpoints.positions.restore,
+})
 
-export async function getPositions(id: string): Promise<PositionsEntity> {
-  const res = await httpClient.get<ApiResponse<PositionsEntity>>(endpoints.positions.byId(id))
-  return res.data.data
-}
+export const listPositions = api.list
+export const getPositions = api.getById
+export const positionsApi = api

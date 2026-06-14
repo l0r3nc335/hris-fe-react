@@ -1,14 +1,15 @@
-import { httpClient } from '@/services/httpClient'
 import { endpoints } from '@/constants/endpoints'
-import type { ApiResponse } from '@/types/api'
+import { createMutableResourceApi } from './client'
 import type { RecruitmentEntity } from '@/modules/recruitment/types'
 
-export async function listRecruitment(): Promise<RecruitmentEntity[]> {
-  const res = await httpClient.get<ApiResponse<RecruitmentEntity[]>>(endpoints.recruitment.list)
-  return res.data.data
-}
+const api = createMutableResourceApi<RecruitmentEntity>({
+  list: endpoints.recruitment.list,
+  byId: endpoints.recruitment.byId,
+  trashed: endpoints.recruitment.trashed,
+  softDelete: endpoints.recruitment.softDelete,
+  restore: endpoints.recruitment.restore,
+})
 
-export async function getRecruitment(id: string): Promise<RecruitmentEntity> {
-  const res = await httpClient.get<ApiResponse<RecruitmentEntity>>(endpoints.recruitment.byId(id))
-  return res.data.data
-}
+export const listRecruitment = api.list
+export const getRecruitment = api.getById
+export const recruitmentApi = api

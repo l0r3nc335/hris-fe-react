@@ -1,14 +1,15 @@
-import { httpClient } from '@/services/httpClient'
 import { endpoints } from '@/constants/endpoints'
-import type { ApiResponse } from '@/types/api'
+import { createMutableResourceApi } from './client'
 import type { InterviewsEntity } from '@/modules/interviews/types'
 
-export async function listInterviews(): Promise<InterviewsEntity[]> {
-  const res = await httpClient.get<ApiResponse<InterviewsEntity[]>>(endpoints.interviews.list)
-  return res.data.data
-}
+const api = createMutableResourceApi<InterviewsEntity>({
+  list: endpoints.interviews.list,
+  byId: endpoints.interviews.byId,
+  trashed: endpoints.interviews.trashed,
+  softDelete: endpoints.interviews.softDelete,
+  restore: endpoints.interviews.restore,
+})
 
-export async function getInterviews(id: string): Promise<InterviewsEntity> {
-  const res = await httpClient.get<ApiResponse<InterviewsEntity>>(endpoints.interviews.byId(id))
-  return res.data.data
-}
+export const listInterviews = api.list
+export const getInterviews = api.getById
+export const interviewsApi = api

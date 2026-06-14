@@ -1,34 +1,39 @@
-import { PageHeader } from '@/components/PageHeader'
-import { EmptyState } from '@/components/EmptyState'
-import { PageLoader } from '@/components/PageLoader'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui'
-import { useBillingList } from '../hooks'
+import { EntityListPage } from '@/components/EntityListPage'
+import { EntityFormDialog } from '@/components/EntityFormDialog'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { useEntityCrudPage } from '@/hooks/useEntityCrudPage'
+import {
+  useBillingList,
+  useBillingTrashedList,
+  useCreateBilling,
+  useUpdateBilling,
+  useSoftDeleteBilling,
+  useRestoreBilling,
+  useRemoveBilling,
+} from '../hooks'
 
 export function BillingListPage(): React.JSX.Element {
-  const { items, status } = useBillingList()
-
-  if (status === 'loading') return <PageLoader />
-  if (items.length === 0) return <EmptyState title="No billing found" />
+  const crud = useEntityCrudPage({
+    title: 'Billing',
+    description: 'Manage billing records',
+    emptyTitle: 'No billing found',
+    entitySingular: 'invoice',
+    hooks: {
+      useList: useBillingList,
+      useTrashedList: useBillingTrashedList,
+      useCreate: useCreateBilling,
+      useUpdate: useUpdateBilling,
+      useSoftDelete: useSoftDeleteBilling,
+      useRestore: useRestoreBilling,
+      useRemove: useRemoveBilling,
+    },
+  })
 
   return (
-    <div>
-      <PageHeader title="Billing" description="Manage billing records" />
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Status</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell>{item.name}</TableCell>
-              <TableCell>{item.status}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <>
+      <EntityListPage {...crud.listPageProps} />
+      <EntityFormDialog {...crud.formDialogProps} />
+      <ConfirmDialog {...crud.confirmDialogProps} />
+    </>
   )
 }

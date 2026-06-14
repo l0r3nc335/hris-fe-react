@@ -1,34 +1,39 @@
-import { PageHeader } from '@/components/PageHeader'
-import { EmptyState } from '@/components/EmptyState'
-import { PageLoader } from '@/components/PageLoader'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui'
-import { usePerformanceList } from '../hooks'
+import { EntityListPage } from '@/components/EntityListPage'
+import { EntityFormDialog } from '@/components/EntityFormDialog'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { useEntityCrudPage } from '@/hooks/useEntityCrudPage'
+import {
+  usePerformanceList,
+  usePerformanceTrashedList,
+  useCreatePerformance,
+  useUpdatePerformance,
+  useSoftDeletePerformance,
+  useRestorePerformance,
+  useRemovePerformance,
+} from '../hooks'
 
 export function PerformanceListPage(): React.JSX.Element {
-  const { items, status } = usePerformanceList()
-
-  if (status === 'loading') return <PageLoader />
-  if (items.length === 0) return <EmptyState title="No performance found" />
+  const crud = useEntityCrudPage({
+    title: 'Performance',
+    description: 'Manage performance records',
+    emptyTitle: 'No performance found',
+    entitySingular: 'performance review',
+    hooks: {
+      useList: usePerformanceList,
+      useTrashedList: usePerformanceTrashedList,
+      useCreate: useCreatePerformance,
+      useUpdate: useUpdatePerformance,
+      useSoftDelete: useSoftDeletePerformance,
+      useRestore: useRestorePerformance,
+      useRemove: useRemovePerformance,
+    },
+  })
 
   return (
-    <div>
-      <PageHeader title="Performance" description="Manage performance records" />
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Status</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell>{item.name}</TableCell>
-              <TableCell>{item.status}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <>
+      <EntityListPage {...crud.listPageProps} />
+      <EntityFormDialog {...crud.formDialogProps} />
+      <ConfirmDialog {...crud.confirmDialogProps} />
+    </>
   )
 }

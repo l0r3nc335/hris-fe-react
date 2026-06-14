@@ -1,14 +1,15 @@
-import { httpClient } from '@/services/httpClient'
 import { endpoints } from '@/constants/endpoints'
-import type { ApiResponse } from '@/types/api'
+import { createMutableResourceApi } from './client'
 import type { BillingEntity } from '@/modules/billing/types'
 
-export async function listBilling(): Promise<BillingEntity[]> {
-  const res = await httpClient.get<ApiResponse<BillingEntity[]>>(endpoints.billing.list)
-  return res.data.data
-}
+const api = createMutableResourceApi<BillingEntity>({
+  list: endpoints.billing.list,
+  byId: endpoints.billing.byId,
+  trashed: endpoints.billing.trashed,
+  softDelete: endpoints.billing.softDelete,
+  restore: endpoints.billing.restore,
+})
 
-export async function getBilling(id: string): Promise<BillingEntity> {
-  const res = await httpClient.get<ApiResponse<BillingEntity>>(endpoints.billing.byId(id))
-  return res.data.data
-}
+export const listBilling = api.list
+export const getBilling = api.getById
+export const billingApi = api

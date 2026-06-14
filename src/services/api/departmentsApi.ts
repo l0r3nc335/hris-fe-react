@@ -1,14 +1,17 @@
-import { httpClient } from '@/services/httpClient'
 import { endpoints } from '@/constants/endpoints'
-import type { ApiResponse } from '@/types/api'
+import { createMutableResourceApi } from './client'
 import type { DepartmentsEntity } from '@/modules/departments/types'
 
-export async function listDepartments(): Promise<DepartmentsEntity[]> {
-  const res = await httpClient.get<ApiResponse<DepartmentsEntity[]>>(endpoints.departments.list)
-  return res.data.data
-}
+export const departmentsApi = createMutableResourceApi<DepartmentsEntity>({
+  list: endpoints.departments.list,
+  byId: endpoints.departments.byId,
+  trashed: endpoints.departments.trashed,
+  softDelete: endpoints.departments.softDelete,
+  restore: endpoints.departments.restore,
+})
 
-export async function getDepartments(id: string): Promise<DepartmentsEntity> {
-  const res = await httpClient.get<ApiResponse<DepartmentsEntity>>(endpoints.departments.byId(id))
-  return res.data.data
-}
+export const listDepartments = departmentsApi.list
+export const getDepartments = departmentsApi.getById
+export const createDepartment = departmentsApi.create
+export const updateDepartment = departmentsApi.update
+export const removeDepartment = departmentsApi.remove

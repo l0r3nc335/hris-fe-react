@@ -1,14 +1,19 @@
-import { httpClient } from '@/services/httpClient'
 import { endpoints } from '@/constants/endpoints'
-import type { ApiResponse } from '@/types/api'
+import { createMutableResourceApi } from './client'
 import type { EmployeesEntity } from '@/modules/employees/types'
 
-export async function listEmployees(): Promise<EmployeesEntity[]> {
-  const res = await httpClient.get<ApiResponse<EmployeesEntity[]>>(endpoints.employees.list)
-  return res.data.data
-}
+export const employeesApi = createMutableResourceApi<EmployeesEntity>({
+  list: endpoints.employees.list,
+  byId: endpoints.employees.byId,
+  trashed: endpoints.employees.trashed,
+  softDelete: endpoints.employees.softDelete,
+  restore: endpoints.employees.restore,
+  deactivate: endpoints.employees.deactivate,
+})
 
-export async function getEmployees(id: string): Promise<EmployeesEntity> {
-  const res = await httpClient.get<ApiResponse<EmployeesEntity>>(endpoints.employees.byId(id))
-  return res.data.data
-}
+export const listEmployees = employeesApi.list
+export const getEmployees = employeesApi.getById
+export const createEmployee = employeesApi.create
+export const updateEmployee = employeesApi.update
+export const removeEmployee = employeesApi.remove
+export const deactivateEmployee = employeesApi.deactivate!

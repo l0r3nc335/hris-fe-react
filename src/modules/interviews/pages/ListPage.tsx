@@ -1,34 +1,39 @@
-import { PageHeader } from '@/components/PageHeader'
-import { EmptyState } from '@/components/EmptyState'
-import { PageLoader } from '@/components/PageLoader'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui'
-import { useInterviewsList } from '../hooks'
+import { EntityListPage } from '@/components/EntityListPage'
+import { EntityFormDialog } from '@/components/EntityFormDialog'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { useEntityCrudPage } from '@/hooks/useEntityCrudPage'
+import {
+  useInterviewsList,
+  useInterviewsTrashedList,
+  useCreateInterview,
+  useUpdateInterview,
+  useSoftDeleteInterview,
+  useRestoreInterview,
+  useRemoveInterview,
+} from '../hooks'
 
 export function InterviewsListPage(): React.JSX.Element {
-  const { items, status } = useInterviewsList()
-
-  if (status === 'loading') return <PageLoader />
-  if (items.length === 0) return <EmptyState title="No interviews found" />
+  const crud = useEntityCrudPage({
+    title: 'Interviews',
+    description: 'Manage interviews records',
+    emptyTitle: 'No interviews found',
+    entitySingular: 'interview',
+    hooks: {
+      useList: useInterviewsList,
+      useTrashedList: useInterviewsTrashedList,
+      useCreate: useCreateInterview,
+      useUpdate: useUpdateInterview,
+      useSoftDelete: useSoftDeleteInterview,
+      useRestore: useRestoreInterview,
+      useRemove: useRemoveInterview,
+    },
+  })
 
   return (
-    <div>
-      <PageHeader title="Interviews" description="Manage interviews records" />
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Status</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell>{item.name}</TableCell>
-              <TableCell>{item.status}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <>
+      <EntityListPage {...crud.listPageProps} />
+      <EntityFormDialog {...crud.formDialogProps} />
+      <ConfirmDialog {...crud.confirmDialogProps} />
+    </>
   )
 }

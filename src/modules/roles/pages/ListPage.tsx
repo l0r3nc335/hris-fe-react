@@ -1,34 +1,39 @@
-import { PageHeader } from '@/components/PageHeader'
-import { EmptyState } from '@/components/EmptyState'
-import { PageLoader } from '@/components/PageLoader'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui'
-import { useRolesList } from '../hooks'
+import { EntityListPage } from '@/components/EntityListPage'
+import { EntityFormDialog } from '@/components/EntityFormDialog'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { useEntityCrudPage } from '@/hooks/useEntityCrudPage'
+import {
+  useRolesList,
+  useRolesTrashedList,
+  useCreateRole,
+  useUpdateRole,
+  useSoftDeleteRole,
+  useRestoreRole,
+  useRemoveRole,
+} from '../hooks'
 
 export function RolesListPage(): React.JSX.Element {
-  const { items, status } = useRolesList()
-
-  if (status === 'loading') return <PageLoader />
-  if (items.length === 0) return <EmptyState title="No roles found" />
+  const crud = useEntityCrudPage({
+    title: 'Roles',
+    description: 'Manage roles records',
+    emptyTitle: 'No roles found',
+    entitySingular: 'role',
+    hooks: {
+      useList: useRolesList,
+      useTrashedList: useRolesTrashedList,
+      useCreate: useCreateRole,
+      useUpdate: useUpdateRole,
+      useSoftDelete: useSoftDeleteRole,
+      useRestore: useRestoreRole,
+      useRemove: useRemoveRole,
+    },
+  })
 
   return (
-    <div>
-      <PageHeader title="Roles" description="Manage roles records" />
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Status</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell>{item.name}</TableCell>
-              <TableCell>{item.status}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <>
+      <EntityListPage {...crud.listPageProps} />
+      <EntityFormDialog {...crud.formDialogProps} />
+      <ConfirmDialog {...crud.confirmDialogProps} />
+    </>
   )
 }

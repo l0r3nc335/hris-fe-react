@@ -1,5 +1,11 @@
 const id = (path: string) => (entityId: string): string => `${path}/${entityId}`
 
+const lifecycle = (base: string) => ({
+  trashed: `${base}/trashed`,
+  softDelete: (entityId: string) => `${base}/${entityId}/soft-delete`,
+  restore: (entityId: string) => `${base}/${entityId}/restore`,
+})
+
 export const endpoints = {
   auth: {
     login: '/auth/login',
@@ -22,6 +28,7 @@ export const endpoints = {
     inactive: '/users/inactive',
     deactivate: (userId: string) => `/users/${userId}/deactivate`,
     reactivate: (userId: string) => `/users/${userId}/reactivate`,
+    ...lifecycle('/users'),
   },
   employees: {
     list: '/employees',
@@ -33,9 +40,20 @@ export const endpoints = {
     byManager: (managerId: string) => `/employees/by-manager/${managerId}`,
     active: '/employees/active',
     resigned: '/employees/resigned',
+    deactivate: (employeeId: string) => `/employees/${employeeId}/deactivate`,
+    ...lifecycle('/employees'),
   },
-  departments: { list: '/departments', byId: id('/departments'), employees: (d: string) => `/departments/${d}/employees` },
-  positions: { list: '/positions', byId: id('/positions') },
+  departments: {
+    list: '/departments',
+    byId: id('/departments'),
+    employees: (d: string) => `/departments/${d}/employees`,
+    ...lifecycle('/departments'),
+  },
+  positions: {
+    list: '/positions',
+    byId: id('/positions'),
+    ...lifecycle('/positions'),
+  },
   attendance: {
     checkIn: '/attendance/check-in',
     checkOut: '/attendance/check-out',
@@ -45,6 +63,7 @@ export const endpoints = {
     today: '/attendance/today',
     range: '/attendance/range',
     summary: (e: string) => `/attendance/summary/${e}`,
+    ...lifecycle('/attendance'),
   },
   leave: {
     list: '/leaves',
@@ -56,6 +75,7 @@ export const endpoints = {
     balance: (e: string) => `/leaves/balance/${e}`,
     pending: '/leaves/pending',
     history: (e: string) => `/leaves/history/${e}`,
+    ...lifecycle('/leaves'),
   },
   payroll: {
     list: '/payroll',
@@ -65,6 +85,7 @@ export const endpoints = {
     slips: (e: string) => `/payroll/slips/${e}`,
     summary: '/payroll/summary',
     history: '/payroll/history',
+    ...lifecycle('/payroll'),
   },
   compensation: {
     list: '/compensation',
@@ -72,6 +93,7 @@ export const endpoints = {
     byEmployee: (e: string) => `/compensation/${e}`,
     adjust: (e: string) => `/compensation/${e}/adjust`,
     salaryStructures: '/salary-structures',
+    ...lifecycle('/compensation'),
   },
   timeTracking: {
     list: '/time-logs',
@@ -80,6 +102,7 @@ export const endpoints = {
     stop: '/time-logs/stop',
     byEmployee: (e: string) => `/time-logs/${e}`,
     today: (e: string) => `/time-logs/today/${e}`,
+    ...lifecycle('/time-logs'),
   },
   recruitment: {
     list: '/recruitment/jobs',
@@ -91,12 +114,17 @@ export const endpoints = {
     scheduleInterview: (a: string) => `/recruitment/applicants/${a}/schedule-interview`,
     hire: (a: string) => `/recruitment/applicants/${a}/hire`,
     reject: (a: string) => `/recruitment/applicants/${a}/reject`,
+    ...lifecycle('/recruitment/jobs'),
+    applicantsTrashed: '/recruitment/applicants/trashed',
+    applicantsSoftDelete: (a: string) => `/recruitment/applicants/${a}/soft-delete`,
+    applicantsRestore: (a: string) => `/recruitment/applicants/${a}/restore`,
   },
   interviews: {
     list: '/interviews',
     byId: id('/interviews'),
     reschedule: (i: string) => `/interviews/${i}/reschedule`,
     complete: (i: string) => `/interviews/${i}/complete`,
+    ...lifecycle('/interviews'),
   },
   performance: {
     list: '/performance/reviews',
@@ -106,6 +134,7 @@ export const endpoints = {
     submit: (r: string) => `/performance/reviews/${r}/submit`,
     approve: (r: string) => `/performance/reviews/${r}/approve`,
     ratings: (e: string) => `/performance/ratings/${e}`,
+    ...lifecycle('/performance/reviews'),
   },
   organization: {
     list: '/org/chart',
@@ -113,24 +142,28 @@ export const endpoints = {
     chart: '/org/chart',
     reportingLines: '/org/reporting-lines',
     positionsTree: '/org/positions-tree',
+    ...lifecycle('/org/chart'),
   },
   documents: {
     upload: '/documents/upload',
     list: '/documents',
     byId: id('/documents'),
     byEmployee: (e: string) => `/documents/employee/${e}`,
+    ...lifecycle('/documents'),
   },
   notifications: {
     list: '/notifications',
     markRead: '/notifications/mark-read',
     markAllRead: '/notifications/mark-all-read',
     byId: id('/notifications'),
+    ...lifecycle('/notifications'),
   },
   roles: {
     list: '/roles',
     byId: id('/roles'),
     permissions: '/permissions',
     rolePermissions: (r: string) => `/roles/${r}/permissions`,
+    ...lifecycle('/roles'),
   },
   audit: {
     list: '/audit-logs',
@@ -139,7 +172,7 @@ export const endpoints = {
     byUser: (userId: string) => `/audit-logs/user/${userId}`,
   },
   reports: {
-    list: '/reports/employees',
+    list: '/reports',
     byId: id('/reports'),
     employees: '/reports/employees',
     attendance: '/reports/attendance',
@@ -154,12 +187,14 @@ export const endpoints = {
     root: '/settings',
     company: '/settings/company',
     leaveTypes: '/settings/leave-types',
+    ...lifecycle('/settings'),
   },
   tenants: {
     list: '/tenants',
     byId: id('/tenants'),
     suspend: (t: string) => `/tenants/${t}/suspend`,
     reactivate: (t: string) => `/tenants/${t}/reactivate`,
+    ...lifecycle('/tenants'),
   },
   billing: {
     list: '/billing/invoices',
@@ -169,11 +204,13 @@ export const endpoints = {
     cancel: '/billing/cancel',
     invoices: '/billing/invoices',
     paymentMethods: '/billing/payment-methods',
+    ...lifecycle('/billing/invoices'),
   },
   system: {
-    list: '/health',
-    byId: id('/health'),
+    list: '/system/health-summary',
+    byId: id('/system/health-summary'),
     health: '/health',
+    healthSummary: '/system/health-summary',
     metrics: '/metrics',
     status: '/status',
     version: '/version',
