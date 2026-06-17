@@ -35,7 +35,7 @@ export function AppHeader(): React.JSX.Element {
   const handleLogout = (): void => {
     void dispatch(logout()).then((result) => {
       if (logout.fulfilled.match(result)) {
-        navigate(ROUTES.login)
+        navigate(ROUTES.login, { replace: true })
       }
     })
   }

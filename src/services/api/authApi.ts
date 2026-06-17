@@ -1,4 +1,4 @@
-import { httpClient } from '@/services/httpClient'
+import { httpClient, getRefreshToken } from '@/services/httpClient'
 import { endpoints } from '@/constants/endpoints'
 import type { ApiResponse } from '@/types/api'
 import type { AuthTokens, User } from '@/types'
@@ -19,7 +19,11 @@ export async function login(payload: LoginPayload): Promise<LoginResult> {
 }
 
 export async function logout(): Promise<void> {
-  await httpClient.post(endpoints.auth.logout)
+  const refreshToken = getRefreshToken()
+  await httpClient.post(
+    endpoints.auth.logout,
+    refreshToken ? { refreshToken } : undefined,
+  )
 }
 
 export async function refreshToken(token: string): Promise<AuthTokens> {
