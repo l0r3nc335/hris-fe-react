@@ -1,0 +1,6 @@
+{
+  "metrics": [
+    { "label": "Employees", "value": 42 },
+    { "label": "Departments", "value": 8 }
+  ]
+}

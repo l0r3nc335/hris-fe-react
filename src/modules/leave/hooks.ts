@@ -6,4 +6,7 @@ export {
   useSoftDeleteLeave,
   useRestoreLeave,
   useRemoveLeave,
+  useLeavePendingQuery,
+  useApproveLeaveMutation,
+  useRejectLeaveMutation,
 } from '@/queries'

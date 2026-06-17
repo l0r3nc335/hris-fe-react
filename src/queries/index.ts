@@ -25,6 +25,11 @@ export * from './roles/queries'
 export * from './settings/queries'
 export * from './tenants/queries'
 export * from './billing/queries'
+export * from './permissions/queries'
+export * from './onboarding/queries'
+export * from './benefits/queries'
+export * from './training/queries'
+export * from './reports/queries'
 
 export function useAuditList() {
   return useListQuery(queryKeys.audit.list(), listAudit)

@@ -110,4 +110,48 @@ export const queryKeys = {
     all: ['system'] as const,
     list: () => [...queryKeys.system.all, 'list'] as const,
   },
+  permissions: {
+    all: ['permissions'] as const,
+    list: () => [...queryKeys.permissions.all, 'list'] as const,
+    trashed: () => [...queryKeys.permissions.all, 'trashed'] as const,
+  },
+  onboarding: {
+    all: ['onboarding'] as const,
+    list: () => [...queryKeys.onboarding.all, 'list'] as const,
+    trashed: () => [...queryKeys.onboarding.all, 'trashed'] as const,
+  },
+  benefits: {
+    all: ['benefits'] as const,
+    list: () => [...queryKeys.benefits.all, 'list'] as const,
+    trashed: () => [...queryKeys.benefits.all, 'trashed'] as const,
+  },
+  training: {
+    all: ['training'] as const,
+    list: () => [...queryKeys.training.all, 'list'] as const,
+    trashed: () => [...queryKeys.training.all, 'trashed'] as const,
+  },
+  leavePending: {
+    all: ['leavePending'] as const,
+    list: () => [...queryKeys.leavePending.all, 'list'] as const,
+  },
+  attendanceToday: {
+    all: ['attendanceToday'] as const,
+    list: () => [...queryKeys.attendanceToday.all, 'list'] as const,
+  },
+  payrollSummary: {
+    all: ['payrollSummary'] as const,
+    summary: () => [...queryKeys.payrollSummary.all, 'summary'] as const,
+  },
+  messages: {
+    all: ['messages'] as const,
+    inbox: () => [...queryKeys.messages.all, 'inbox'] as const,
+  },
+  notificationsUnread: {
+    all: ['notificationsUnread'] as const,
+    list: () => [...queryKeys.notificationsUnread.all, 'list'] as const,
+  },
+  orgChart: {
+    all: ['orgChart'] as const,
+    tree: () => [...queryKeys.orgChart.all, 'tree'] as const,
+  },
 } as const

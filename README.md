@@ -31,7 +31,13 @@ VITE_API_BASE_URL=http://localhost:3000
 | `npm run build` | Typecheck + production build |
 | `npm run typecheck` | TypeScript only |
 | `npm run lint` | ESLint |
-| `npm run test` | Vitest unit tests |
+| `npm run test` | Vitest unit/integration tests (Jest-compatible API) |
+| `npm run test:watch` | Vitest watch mode |
+| `npm run test:coverage` | Vitest with coverage report |
+| `npm run cy:open` | Open Cypress interactive runner |
+| `npm run cy:run` | Run Cypress headless (dev server must be running) |
+| `npm run test:e2e` | Start Vite + run Cypress E2E suite |
+| `npm run test:all` | Run Vitest and Cypress |
 
 ## Architecture
 
@@ -41,9 +47,47 @@ VITE_API_BASE_URL=http://localhost:3000
 - `src/queries/*` — TanStack Query hooks and mutations
 - `src/ui/*` — design system (Radix + Tailwind)
 
+## Testing
+
+- **Unit / integration:** [Vitest](https://vitest.dev/) + Testing Library + MSW (same `describe` / `it` / `expect` API as Jest)
+- **E2E:** [Cypress](https://www.cypress.io/) with mocked `/api/v1` responses (no backend required for the default suite)
+- Feature coverage is driven by `src/test/features.ts` (Vitest) and `cypress/e2e/features.cy.ts` (E2E)
+
+```bash
+npm run test           # unit/integration
+npm run test:e2e       # Cypress (starts dev server automatically)
+npm run test:all       # both
+```
+
 ## Environment
 
 | Variable | Description |
 |----------|-------------|
 | `VITE_API_BASE_URL` | Backend origin (default `http://localhost:3000`) |
 | `VITE_SENTRY_DSN` | Optional Sentry DSN |
+
+
+
+--------------------
+
+Routing
+/ — Landing page (public)
+/about, /pricing, /contact — Public marketing pages
+/dashboard — Authenticated dashboard (was /)
+Unknown routes redirect to / (landing)
+New files
+PublicNavbar.tsx — Logo, About/Pricing/Contact links, Login + Get Started, mobile sheet menu
+publicNavigation.ts — Nav item config
+LandingPage.tsx, AboutPage.tsx, PricingPage.tsx, ContactPage.tsx
+PublicPageShell.tsx — Shared page wrapper
+PublicNavbar.test.tsx
+Updated files
+PublicLayout.tsx — h-screen overflow-hidden, auth redirect to dashboard
+routes.ts, routes/index.tsx, lazyRoutes.tsx
+test/features.ts — Dashboard path updated
+Behavior
+Logged-in users visiting public routes are redirected to /dashboard
+Login still redirects to ROUTES.home (/dashboard)
+All public pages use a fixed viewport layout (no scrolling)
+TypeScript check passes; PublicNavbar unit tests pass (2/2)
+Run npm run dev and open / to see the landing page.

@@ -6,5 +6,6 @@ export {
   useSoftDeleteEmployee,
   useRestoreEmployee,
   useRemoveEmployee,
-  useDeactivateEmployee,
+  usePromoteEmployeeMutation,
+  useTransferEmployeeMutation,
 } from '@/queries'

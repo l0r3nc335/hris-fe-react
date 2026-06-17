@@ -63,12 +63,13 @@ export const refreshSession = createAsyncThunk(
   },
 )
 
-export const logout = createAsyncThunk('auth/logout', async () => {
+export const logout = createAsyncThunk('auth/logout', async (_, { rejectWithValue }) => {
   try {
     await authApi.logout()
-  } finally {
     clearAuthStorage()
     setTenantId(null)
+  } catch (e) {
+    return rejectWithValue(normalizeApiError(e).message)
   }
 })
 

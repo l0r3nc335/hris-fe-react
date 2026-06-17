@@ -6,4 +6,5 @@ export {
   useSoftDeleteOrganization,
   useRestoreOrganization,
   useRemoveOrganization,
+  useOrgChartTreeQuery,
 } from '@/queries'

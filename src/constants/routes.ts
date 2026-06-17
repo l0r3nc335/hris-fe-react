@@ -1,5 +1,9 @@
 export const ROUTES = {
-  home: '/',
+  landing: '/',
+  about: '/about',
+  pricing: '/pricing',
+  contact: '/contact',
+  home: '/dashboard',
   login: '/auth/login',
   register: '/auth/register',
   forgotPassword: '/auth/forgot-password',
@@ -28,4 +32,7 @@ export const ROUTES = {
   tenants: '/tenants',
   billing: '/billing',
   systemHealth: '/admin/health',
+  onboarding: '/onboarding',
+  benefits: '/benefits',
+  training: '/training',
 } as const

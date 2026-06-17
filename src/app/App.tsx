@@ -4,6 +4,7 @@ import { useAppDispatch } from '@/hooks'
 import { fetchMe, refreshSession } from '@/slices/authSlice'
 import { setAuthHandlers, getAccessToken } from '@/services/httpClient'
 import { store } from '@/store'
+import { ThemeProvider } from '@/components/ThemeProvider'
 import { Providers } from './providers'
 
 function AuthBootstrap(): React.JSX.Element {
@@ -23,7 +24,11 @@ function AuthBootstrap(): React.JSX.Element {
     if (getAccessToken()) void dispatch(fetchMe())
   }, [dispatch])
 
-  return <Providers />
+  return (
+    <ThemeProvider>
+      <Providers />
+    </ThemeProvider>
+  )
 }
 
 export function App(): React.JSX.Element {

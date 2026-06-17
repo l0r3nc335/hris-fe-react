@@ -1,5 +1,17 @@
 import { lazy } from 'react'
 
+export const LandingPage = lazy(() =>
+  import('@/modules/public/pages/LandingPage').then((m) => ({ default: m.LandingPage })),
+)
+export const AboutPage = lazy(() =>
+  import('@/modules/public/pages/AboutPage').then((m) => ({ default: m.AboutPage })),
+)
+export const PricingPage = lazy(() =>
+  import('@/modules/public/pages/PricingPage').then((m) => ({ default: m.PricingPage })),
+)
+export const ContactPage = lazy(() =>
+  import('@/modules/public/pages/ContactPage').then((m) => ({ default: m.ContactPage })),
+)
 export const DashboardPage = lazy(() =>
   import('@/modules/dashboard/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
 )
@@ -80,4 +92,16 @@ export const BillingListPage = lazy(() =>
 )
 export const SystemListPage = lazy(() =>
   import('@/modules/system/pages/ListPage').then((m) => ({ default: m.SystemListPage })),
+)
+export const PermissionsListPage = lazy(() =>
+  import('@/modules/permissions/pages/ListPage').then((m) => ({ default: m.PermissionsListPage })),
+)
+export const OnboardingListPage = lazy(() =>
+  import('@/modules/onboarding/pages/ListPage').then((m) => ({ default: m.OnboardingListPage })),
+)
+export const BenefitsListPage = lazy(() =>
+  import('@/modules/benefits/pages/ListPage').then((m) => ({ default: m.BenefitsListPage })),
+)
+export const TrainingListPage = lazy(() =>
+  import('@/modules/training/pages/ListPage').then((m) => ({ default: m.TrainingListPage })),
 )

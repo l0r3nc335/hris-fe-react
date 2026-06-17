@@ -153,6 +153,7 @@ export const endpoints = {
   },
   notifications: {
     list: '/notifications',
+    recent: '/notifications/recent',
     markRead: '/notifications/mark-read',
     markAllRead: '/notifications/mark-all-read',
     byId: id('/notifications'),
@@ -214,5 +215,31 @@ export const endpoints = {
     metrics: '/metrics',
     status: '/status',
     version: '/version',
+  },
+  permissions: {
+    list: '/permissions',
+    assign: (roleId: string) => `/roles/${roleId}/permissions`,
+  },
+  onboarding: {
+    list: '/onboarding',
+    byId: id('/onboarding'),
+    ...lifecycle('/onboarding'),
+  },
+  benefits: {
+    list: '/benefits',
+    byId: id('/benefits'),
+    plans: '/benefits/plans',
+    enrollments: '/benefits/enrollments',
+    ...lifecycle('/benefits'),
+  },
+  training: {
+    list: '/training',
+    byId: id('/training'),
+    courses: '/training/courses',
+    enrollments: '/training/enrollments',
+    ...lifecycle('/training'),
+  },
+  messages: {
+    inbox: '/messages/inbox',
   },
 } as const

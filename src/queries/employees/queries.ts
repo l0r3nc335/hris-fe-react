@@ -1,6 +1,8 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/queryKeys'
-import { employeesApi } from '@/services/api/employeesApi'
-import { createResourceQueryHooks, useDeactivateMutation } from '../factory'
+import { employeesApi, promoteEmployee, transferEmployee } from '@/services/api/employeesApi'
+import { createResourceQueryHooks } from '../factory'
+import { toast } from 'sonner'
 
 const hooks = createResourceQueryHooks(queryKeys.employees, employeesApi)
 
@@ -12,10 +14,26 @@ export const useSoftDeleteEmployee = hooks.useSoftDelete
 export const useRestoreEmployee = hooks.useRestore
 export const useRemoveEmployee = hooks.useRemove
 
-export function useDeactivateEmployee() {
-  return useDeactivateMutation(
-    queryKeys.employees.all,
-    queryKeys.employees.list(),
-    employeesApi.deactivate!,
-  )
+export function usePromoteEmployeeMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, positionId }: { id: string; positionId: string }) =>
+      promoteEmployee(id, positionId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.employees.all })
+      toast.success('Employee promoted')
+    },
+  })
+}
+
+export function useTransferEmployeeMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, departmentId }: { id: string; departmentId: string }) =>
+      transferEmployee(id, departmentId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.employees.all })
+      toast.success('Employee transferred')
+    },
+  })
 }

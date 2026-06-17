@@ -6,4 +6,6 @@ export {
   useSoftDeletePayroll,
   useRestorePayroll,
   useRemovePayroll,
+  usePayrollSummaryQuery,
+  usePayrollRunMutation,
 } from '@/queries'
