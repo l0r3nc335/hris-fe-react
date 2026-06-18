@@ -1,5 +1,7 @@
 # HRIS Enterprise Frontend — Setup Guide
 
+> **Building from scratch?** Use [SETUP_GUIDE_BUILD.md](./SETUP_GUIDE_BUILD.md) for the correct step-by-step build order. This file is extended reference documentation.
+
 A step-by-step guide for setting up and extending this codebase. It mirrors the standard enterprise React scaffold order (structure → layouts → routing → auth → shared UI → testing → state → API → queries → features) but is grounded in **this repo's actual files, conventions, and patterns**.
 
 For quick start commands, see [README.md](./README.md).
@@ -46,22 +48,26 @@ The app boots in this order:
 
 ```mermaid
 flowchart TD
-  mainTsx[main.tsx] --> AppTsx[app/App.tsx]
-  AppTsx --> ReduxProvider[Redux Provider]
-  AppTsx --> AuthBootstrap[AuthBootstrap]
-  AuthBootstrap --> setHandlers[setAuthHandlers + fetchMe]
-  AuthBootstrap --> ThemeProvider[ThemeProvider]
-  ThemeProvider --> Providers[app/providers.tsx]
-  Providers --> QueryClient[QueryClientProvider]
-  Providers --> Router[RouterProvider]
+  mainTsx[main.tsx] --> bootstrapAuth[bootstrap/auth.ts]
+  bootstrapAuth --> setHandlers[setAuthHandlers + fetchMe]
+  mainTsx --> AppProviders[app/AppProviders.tsx]
+  AppProviders --> ReduxProvider[Redux Provider]
+  AppProviders --> CoreProviders[Query + Theme + Tooltip + ErrorBoundary]
+  AppProviders --> AuthGate[modules/auth/AuthGate.tsx]
+  AppProviders --> Toaster[Sonner Toaster]
+  AuthGate --> AppTsx[app/App.tsx]
+  AppTsx --> Router[RouterProvider]
   Router --> Routes[routes/index.tsx]
 ```
 
 | File | Role |
 |------|------|
-| [`src/main.tsx`](src/main.tsx) | Renders `<App />` in StrictMode |
-| [`src/app/App.tsx`](src/app/App.tsx) | Redux `Provider`, wires auth handlers, bootstraps session |
-| [`src/app/providers.tsx`](src/app/providers.tsx) | QueryClient, Router, ErrorBoundary, Toaster, Sentry |
+| [`src/main.tsx`](src/main.tsx) | Calls `bootstrapAuth(store)` before render; mounts `<AppProviders>` + `<App />` in StrictMode |
+| [`src/bootstrap/auth.ts`](src/bootstrap/auth.ts) | Wires `setAuthHandlers` (401 refresh) and dispatches `fetchMe` when a token exists |
+| [`src/app/AppProviders.tsx`](src/app/AppProviders.tsx) | Redux `Provider`, composed providers, `AuthGate`, `Toaster` |
+| [`src/app/providers/`](src/app/providers/) | `QueryProvider`, `ThemeProvider`, `TooltipProvider`, `ErrorBoundaryProvider` |
+| [`src/modules/auth/AuthGate.tsx`](src/modules/auth/AuthGate.tsx) | Full-page loader while session restores (`fetchMe` in flight) |
+| [`src/app/App.tsx`](src/app/App.tsx) | `<RouterProvider router={router} />` only |
 
 ---
 
@@ -73,8 +79,14 @@ This repo uses a **module-based** layout. The actual `src/` tree:
 
 ```
 src/
-├── app/              # App shell, providers, store re-export
+├── app/              # App shell
+│   ├── App.tsx       # RouterProvider only
+│   ├── AppProviders.tsx
+│   ├── instrumentation.ts  # Sentry init
+│   └── providers/    # QueryProvider, ThemeProvider, etc.
 ├── assets/           # Static SVGs
+├── bootstrap/        # Pre-render setup (auth handlers + session restore)
+│   └── auth.ts
 ├── components/       # Shared app components
 │   ├── layout/       # AppHeader, AppSidebar, PublicNavbar, etc.
 │   └── ui/           # shadcn/Radix primitives (button, form, table, …)
@@ -82,7 +94,8 @@ src/
 ├── hooks/            # Typed Redux hooks, useEntityCrudPage, usePermission, useTheme
 ├── layouts/          # PublicLayout, AuthLayout, DashboardLayout
 ├── lib/              # queryClient, queryKeys, cn()
-├── modules/          # Feature domains (30 modules) — NOT features/ or top-level pages/
+├── modules/          # Feature domains (30+ modules) — NOT features/ or top-level pages/
+│   └── auth/         # AuthGate, pages/ (Login, Register, Forgot), schemas.ts
 ├── queries/          # TanStack Query hooks (factory + per-domain)
 ├── routes/           # index.tsx, lazyRoutes.tsx, protectedRoute.tsx
 ├── services/         # httpClient, errors, logger
@@ -99,6 +112,7 @@ src/
 
 These choices are already made in this codebase. Follow them when adding features to avoid refactoring later.
 
+- **Auth split** — `modules/auth/` holds auth **UI** (pages, schemas, `AuthGate`); `slices/authSlice.ts` holds **session state** (user, tokens, `isAuthenticated`)
 - **Module-based architecture** under `modules/` — enforced by `eslint-plugin-boundaries` (modules must not import from other modules)
 - **Redux boundaries** — session (`auth`) and UI (`ui`) only; no feature slices
 - **Query boundaries** — TanStack Query hooks live in `queries/`, re-exported by `modules/<domain>/hooks.ts`
@@ -388,14 +402,46 @@ export function ProtectedRoute({ permissions }: ProtectedRouteProps): React.JSX.
 
 # 4. Authentication Foundation
 
+## Auth file map
+
 | Concern | File |
 |---------|------|
+| Login UI | [`src/modules/auth/pages/LoginPage.tsx`](src/modules/auth/pages/LoginPage.tsx) |
+| Register / forgot UI | [`src/modules/auth/pages/RegisterPage.tsx`](src/modules/auth/pages/RegisterPage.tsx), [`ForgotPasswordPage.tsx`](src/modules/auth/pages/ForgotPasswordPage.tsx) |
+| Validation schemas | [`src/modules/auth/schemas.ts`](src/modules/auth/schemas.ts) |
+| Session restore gate | [`src/modules/auth/AuthGate.tsx`](src/modules/auth/AuthGate.tsx) |
 | Session state | [`src/slices/authSlice.ts`](src/slices/authSlice.ts) |
 | Auth API | [`src/services/api/authApi.ts`](src/services/api/authApi.ts) |
 | Token storage + interceptors | [`src/services/httpClient.ts`](src/services/httpClient.ts) |
-| Handler wiring | [`src/app/App.tsx`](src/app/App.tsx) |
-| Route guard | [`src/routes/protectedRoute.tsx`](src/routes/protectedRoute.tsx) |
-| Permission checks | [`src/hooks/usePermission.ts`](src/hooks/usePermission.ts) |
+| Bootstrap wiring | [`src/bootstrap/auth.ts`](src/bootstrap/auth.ts) (called from `main.tsx`) |
+| Auth route layout | [`src/layouts/AuthLayout.tsx`](src/layouts/AuthLayout.tsx) |
+| App route guard | [`src/routes/protectedRoute.tsx`](src/routes/protectedRoute.tsx) |
+| Permission hook | [`src/hooks/usePermission.ts`](src/hooks/usePermission.ts) |
+| Optional UI guard | [`src/components/RequirePermission.tsx`](src/components/RequirePermission.tsx) (exists; not wired in pages yet) |
+
+## Auth routes
+
+URLs from [`src/constants/routes.ts`](src/constants/routes.ts). Pages are lazy-loaded via [`src/routes/lazyRoutes.tsx`](src/routes/lazyRoutes.tsx) and registered in [`src/routes/index.tsx`](src/routes/index.tsx) under `AuthLayout` (see **Section 3**).
+
+| Route | Page | Layout |
+|-------|------|--------|
+| `/auth/login` (`ROUTES.login`) | `LoginPage` | `AuthLayout` |
+| `/auth/register` (`ROUTES.register`) | `RegisterPage` | `AuthLayout` |
+| `/auth/forgot-password` (`ROUTES.forgotPassword`) | `ForgotPasswordPage` | `AuthLayout` |
+| `/login` | redirect → `/auth/login` | — |
+| `/dashboard` (`ROUTES.home`) | post-login destination | `DashboardLayout` |
+
+Lazy-loading pattern for auth pages:
+
+```tsx
+// src/routes/lazyRoutes.tsx
+export const LoginPage = lazy(() =>
+  import('@/modules/auth/pages/LoginPage').then((m) => ({ default: m.LoginPage })),
+)
+
+// src/routes/index.tsx
+{ path: 'login', element: <SuspenseWrap><Lazy.LoginPage /></SuspenseWrap> },
+```
 
 ## Token storage
 
@@ -411,38 +457,77 @@ In-memory mirrors exist for `accessToken` and `tenantId` for fast interceptor ac
 
 ## Flows
 
-**Login:** `LoginPage` → Redux `login` thunk → `authApi.login` → store tokens + tenant → `isAuthenticated = true` → navigate to dashboard.
+**Login:**
 
-**Logout:** `AppHeader` → Redux `logout` thunk → `authApi.logout` → `clearAuthStorage`.
+```
+User → /auth/login (AuthLayout)
+  → LoginPage dispatches login thunk
+  → authApi.login → BE returns user + tokens + permissions
+  → authSlice stores user, tokens, tenantId
+  → navigate(ROUTES.home) → /dashboard
+```
 
-**Bootstrap:** On app mount, `App.tsx` calls `setAuthHandlers` and, if a token exists, dispatches `fetchMe`.
+```tsx
+// src/modules/auth/pages/LoginPage.tsx
+void dispatch(login(data)).then((result) => {
+  if (login.fulfilled.match(result)) navigate(ROUTES.home)
+})
+```
+
+**Logout:** `AppHeader` → Redux `logout` thunk → best-effort `authApi.logout` (sends refresh token) → always `clearAuthStorage` in `finally` → redirect to `ROUTES.login` (`/auth/login`) on `logout.fulfilled`.
+
+**Bootstrap:** `main.tsx` calls `bootstrapAuth(store)` before render. That wires `setAuthHandlers` and, if a token exists, dispatches `fetchMe` to restore `user` (including `permissions`) into Redux.
+
+**AuthGate:** While a token exists but `user === null` (session restoring), shows a full-page `PageLoader` until `fetchMe` completes or fails.
 
 **401 refresh:** Axios response interceptor queues failed requests, calls `refreshSession` thunk once, retries with new token. On refresh failure, clears auth storage.
 
 **Request headers:** Every request gets `Authorization: Bearer <token>` and `X-Tenant-Id: <tenantId>` when available.
 
+## Layout guards
+
+| Layout / guard | Behavior |
+|----------------|----------|
+| `PublicLayout` | Authenticated → redirect `/dashboard` |
+| `AuthLayout` | Authenticated → redirect `/dashboard`; logo links to `/` (`ROUTES.landing`) |
+| `ProtectedRoute` | Unauthenticated → redirect `/auth/login` |
+
 ## Wiring auth handlers
 
-```tsx
-// src/app/App.tsx
-useEffect(() => {
+Auth handlers are wired in [`src/bootstrap/auth.ts`](src/bootstrap/auth.ts), **not** in `App.tsx`:
+
+```ts
+// src/bootstrap/auth.ts
+import { fetchMe, refreshSession } from '@/slices/authSlice'
+import { setAuthHandlers, getAccessToken } from '@/services/httpClient'
+import type { AppStore } from '@/store'
+
+export function bootstrapAuth(store: AppStore): void {
   setAuthHandlers({
     refresh: async () => {
-      const result = await dispatch(refreshSession())
+      const result = await store.dispatch(refreshSession())
       if (refreshSession.fulfilled.match(result)) return result.payload
       return null
     },
     unauthorized: () => {
-      void dispatch(refreshSession())
+      void store.dispatch(refreshSession())
     },
   })
-  if (getAccessToken()) void dispatch(fetchMe())
-}, [dispatch])
+  if (getAccessToken()) void store.dispatch(fetchMe())
+}
 ```
 
-## Route-level permissions
+Called from `main.tsx` before `createRoot(...).render(...)`.
 
-`ProtectedRoute` accepts an optional `permissions` prop, but **no routes pass it today**. To enforce permissions on a route:
+## Permissions
+
+- `user.permissions` (string array) comes from the backend on **login** and **`GET /auth/me`** — resolved from the user's roles in the database.
+- `GET /permissions` is a separate **admin catalog** endpoint (Permissions list page), not used to determine the current user's access.
+- FE checks today: sidebar and global search filter via `usePermission()` + `constants/navigation.ts`.
+- BE enforces permissions on API endpoints via `PermissionsGuard`.
+- `ProtectedRoute` accepts an optional `permissions` prop, and `RequirePermission` can hide UI — **neither is wired to routes or CRUD actions yet**.
+
+To enforce permissions on a route when needed:
 
 ```tsx
 {
@@ -451,7 +536,7 @@ useEffect(() => {
 }
 ```
 
-Sidebar nav already filters by permission via `constants/navigation.ts`; route-level enforcement is an additional layer you can wire when needed.
+Sidebar nav already filters by permission via `constants/navigation.ts`; route-level and action-level enforcement are additional layers you can wire when needed.
 
 ---
 
@@ -478,7 +563,8 @@ Add new shadcn components with the shadcn CLI (aliases point to `@/components/ui
 | `EntityListPage` | Generic searchable table with active/trashed tabs |
 | `EntityFormDialog` | Create/edit dialog (name + status) |
 | `ConfirmDialog` | Soft delete, hard delete, restore confirmations |
-| `PageHeader` | Page title + description |
+| `PageHeader` | Standalone page title + description |
+| `PageShell` | Dashboard page wrapper (title, description, toolbar, breadcrumbs) |
 | `PageLoader` | Suspense fallback |
 | `EmptyState` | Empty list placeholder |
 | `ErrorBoundary` | Catches render errors |
@@ -756,6 +842,22 @@ modules/<domain>/
 └── types.ts              # Domain entity types
 ```
 
+### Auth module (non-CRUD)
+
+Unlike HR domain modules, auth lives under `modules/auth/` with no list page or `hooks.ts` re-exports:
+
+```
+modules/auth/
+├── AuthGate.tsx              # Session restore loader (wraps app in AppProviders)
+├── pages/
+│   ├── LoginPage.tsx         # Redux login thunk → /dashboard
+│   ├── RegisterPage.tsx      # Direct authApi.register → redirect to login
+│   └── ForgotPasswordPage.tsx
+└── schemas.ts                # zod schemas for login, register, forgot-password
+```
+
+Session state remains in `slices/authSlice.ts`; pages dispatch thunks or call `authApi` directly (register/forgot do not auto-login).
+
 ### Generic CRUD page pattern
 
 Most list pages follow this pattern ([`modules/users/pages/ListPage.tsx`](src/modules/users/pages/ListPage.tsx)):
@@ -818,7 +920,7 @@ Use this when scaffolding a new domain (e.g. `expenses`):
 
 | Module | Difference |
 |--------|------------|
-| `auth` | Login/register/forgot with RHF + zod; no list page |
+| `auth` | `AuthGate`, login/register/forgot pages, RHF + zod schemas; no list page |
 | `public` | Marketing pages (Landing, About, Pricing, Contact) |
 | `dashboard` | Metrics via analytics query |
 | `leave` | Pending tab + approve/reject actions |
@@ -960,6 +1062,7 @@ Read this section to avoid surprises:
 | List pages | Most are **API-wired but UI-generic** (name + status fields only) |
 | Reset password | `ROUTES.resetPassword` constant exists; **no page or router entry** |
 | Route permissions | `ProtectedRoute` supports `permissions` prop; **not wired in router yet** |
+| FE action permissions | Sidebar/search filter only; **CRUD buttons not gated** by `RequirePermission` |
 | Register flow | Does **not** auto-login; redirects to login page |
 | Integration tests | Require **live backend** (Docker Postgres + NestJS) |
 | E2E tests | Can run with mocked API; `test:e2e` starts full stack by default |
@@ -973,7 +1076,11 @@ Read this section to avoid surprises:
 | Area | Path |
 |------|------|
 | Entry | `src/main.tsx` |
-| App bootstrap | `src/app/App.tsx`, `src/app/providers.tsx` |
+| Auth bootstrap | `src/bootstrap/auth.ts` |
+| App providers | `src/app/AppProviders.tsx`, `src/app/providers/` |
+| Router shell | `src/app/App.tsx` |
+| Auth gate | `src/modules/auth/AuthGate.tsx` |
+| Login page | `src/modules/auth/pages/LoginPage.tsx` |
 | Auth slice | `src/slices/authSlice.ts` |
 | UI slice | `src/slices/uiSlice.ts` |
 | HTTP + tokens | `src/services/httpClient.ts` |

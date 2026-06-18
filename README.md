@@ -47,6 +47,9 @@ VITE_API_BASE_URL=http://localhost:3000
 - `src/queries/*` — TanStack Query hooks and mutations
 - `src/ui/*` — design system (Radix + Tailwind)
 
+- **Build order (greenfield):** [SETUP_GUIDE_BUILD.md](./SETUP_GUIDE_BUILD.md)
+- **Extended reference:** [SETUP_GUIDE.md](./SETUP_GUIDE.md)
+
 ## Testing
 
 - **Unit / integration:** [Vitest](https://vitest.dev/) + Testing Library + MSW (same `describe` / `it` / `expect` API as Jest)
@@ -65,29 +68,3 @@ npm run test:all       # both
 |----------|-------------|
 | `VITE_API_BASE_URL` | Backend origin (default `http://localhost:3000`) |
 | `VITE_SENTRY_DSN` | Optional Sentry DSN |
-
-
-
---------------------
-
-Routing
-/ — Landing page (public)
-/about, /pricing, /contact — Public marketing pages
-/dashboard — Authenticated dashboard (was /)
-Unknown routes redirect to / (landing)
-New files
-PublicNavbar.tsx — Logo, About/Pricing/Contact links, Login + Get Started, mobile sheet menu
-publicNavigation.ts — Nav item config
-LandingPage.tsx, AboutPage.tsx, PricingPage.tsx, ContactPage.tsx
-PublicPageShell.tsx — Shared page wrapper
-PublicNavbar.test.tsx
-Updated files
-PublicLayout.tsx — h-screen overflow-hidden, auth redirect to dashboard
-routes.ts, routes/index.tsx, lazyRoutes.tsx
-test/features.ts — Dashboard path updated
-Behavior
-Logged-in users visiting public routes are redirected to /dashboard
-Login still redirects to ROUTES.home (/dashboard)
-All public pages use a fixed viewport layout (no scrolling)
-TypeScript check passes; PublicNavbar unit tests pass (2/2)
-Run npm run dev and open / to see the landing page.

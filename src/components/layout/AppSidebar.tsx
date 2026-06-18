@@ -1,13 +1,13 @@
 import { NavLink } from 'react-router-dom'
-import { ChevronDown, Search, Settings } from 'lucide-react'
+import { Building2, ChevronDown, Search, Settings } from 'lucide-react'
 import { useAppDispatch, useAppSelector } from '@/hooks'
 import { setSidebarSearchQuery, toggleNavGroup } from '@/slices/uiSlice'
-import { NAV_GROUPS } from '@/constants/navigation'
+import { NAV_GROUPS, type NavItem } from '@/constants/navigation'
 import { usePermission } from '@/hooks/usePermission'
 import { ROUTES } from '@/constants/routes'
 import { cn } from '@/utils/cn'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/ui'
+import { Button, Tooltip } from '@/ui'
 import {
   Collapsible,
   CollapsibleContent,
@@ -17,9 +17,57 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 
 interface AppSidebarProps {
   onNavigate?: () => void
+  collapsed?: boolean
 }
 
-export function AppSidebar({ onNavigate }: AppSidebarProps): React.JSX.Element {
+function navLinkClassName(collapsed: boolean, isActive: boolean): string {
+  return cn(
+    'flex rounded-md text-sm transition-colors',
+    collapsed
+      ? 'mx-auto size-9 items-center justify-center'
+      : 'items-center gap-2 px-3 py-2',
+    isActive
+      ? 'bg-primary text-primary-foreground'
+      : 'text-sidebar-foreground hover:bg-accent',
+  )
+}
+
+function SidebarNavItem({
+  item,
+  collapsed,
+  onNavigate,
+}: {
+  item: NavItem
+  collapsed: boolean
+  onNavigate?: () => void
+}): React.JSX.Element {
+  const link = (
+    <NavLink
+      to={item.path}
+      end={item.path === ROUTES.home}
+      onClick={onNavigate}
+      className={({ isActive }) => navLinkClassName(collapsed, isActive)}
+    >
+      <item.icon className="h-4 w-4 shrink-0" />
+      {!collapsed ? item.label : null}
+    </NavLink>
+  )
+
+  if (collapsed) {
+    return (
+      <Tooltip content={item.label} side="right">
+        {link}
+      </Tooltip>
+    )
+  }
+
+  return link
+}
+
+export function AppSidebar({
+  onNavigate,
+  collapsed = false,
+}: AppSidebarProps): React.JSX.Element {
   const dispatch = useAppDispatch()
   const expandedGroups = useAppSelector((s) => s.ui.expandedNavGroups)
   const searchQuery = useAppSelector((s) => s.ui.sidebarSearchQuery)
@@ -36,6 +84,55 @@ export function AppSidebar({ onNavigate }: AppSidebarProps): React.JSX.Element {
       return item.label.toLowerCase().includes(normalizedQuery)
     }),
   })).filter((group) => group.items.length > 0)
+
+  const flatItems = filteredGroups.flatMap((group) => group.items)
+
+  if (collapsed) {
+    return (
+      <div className="flex h-full flex-col">
+        <div className="flex h-14 items-center justify-center border-b border-sidebar-border text-sidebar-foreground">
+          <Building2 className="h-5 w-5" aria-hidden />
+          <span className="sr-only">HRIS Enterprise</span>
+        </div>
+        <ScrollArea className="flex-1">
+          <nav className="space-y-1 p-2">
+            {flatItems.map((item) => (
+              <SidebarNavItem
+                key={item.path}
+                item={item}
+                collapsed
+                onNavigate={onNavigate}
+              />
+            ))}
+          </nav>
+        </ScrollArea>
+        <div className="border-t border-sidebar-border p-2">
+          <Tooltip content="Settings" side="right">
+            <NavLink
+              to={ROUTES.settings}
+              onClick={onNavigate}
+              className={({ isActive }) => navLinkClassName(true, isActive)}
+            >
+              <Settings className="h-4 w-4" />
+            </NavLink>
+          </Tooltip>
+        </div>
+      </div>
+    )
+  }
+
+  const settingsLink = (
+    <NavLink
+      to={ROUTES.settings}
+      onClick={onNavigate}
+      className={({ isActive }) =>
+        cn('flex w-full items-center gap-2', isActive && 'text-primary')
+      }
+    >
+      <Settings className="h-4 w-4" />
+      Settings
+    </NavLink>
+  )
 
   return (
     <div className="flex h-full flex-col">
@@ -74,23 +171,12 @@ export function AppSidebar({ onNavigate }: AppSidebarProps): React.JSX.Element {
                 </CollapsibleTrigger>
                 <CollapsibleContent className="space-y-0.5 pt-1 pb-2">
                   {group.items.map((item) => (
-                    <NavLink
+                    <SidebarNavItem
                       key={item.path}
-                      to={item.path}
-                      end={item.path === ROUTES.home}
-                      onClick={onNavigate}
-                      className={({ isActive }) =>
-                        cn(
-                          'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
-                          isActive
-                            ? 'bg-primary text-primary-foreground'
-                            : 'text-sidebar-foreground hover:bg-accent',
-                        )
-                      }
-                    >
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      {item.label}
-                    </NavLink>
+                      item={item}
+                      collapsed={false}
+                      onNavigate={onNavigate}
+                    />
                   ))}
                 </CollapsibleContent>
               </Collapsible>
@@ -100,10 +186,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps): React.JSX.Element {
       </ScrollArea>
       <div className="border-t border-sidebar-border p-2">
         <Button variant="ghost" size="sm" className="w-full justify-start gap-2" asChild>
-          <NavLink to={ROUTES.settings} onClick={onNavigate}>
-            <Settings className="h-4 w-4" />
-            Settings
-          </NavLink>
+          {settingsLink}
         </Button>
       </div>
     </div>

@@ -13,10 +13,10 @@ export function DashboardLayout(): React.JSX.Element {
       <aside
         className={cn(
           'hidden border-r border-sidebar-border bg-sidebar md:block md:transition-all',
-          sidebarOpen ? 'md:w-64' : 'md:w-0 md:overflow-hidden',
+          sidebarOpen ? 'md:w-64' : 'md:w-14',
         )}
       >
-        <AppSidebar />
+        <AppSidebar collapsed={!sidebarOpen} />
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeader />
