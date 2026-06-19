@@ -54,11 +54,13 @@ export interface ResourceEndpoints {
 export interface CreateBody {
   name: string
   status?: string
+  [key: string]: string | undefined
 }
 
 export interface UpdateBody {
   name?: string
   status?: string
+  [key: string]: string | undefined
 }
 
 export type MutableResourceEndpoints = ResourceEndpoints &

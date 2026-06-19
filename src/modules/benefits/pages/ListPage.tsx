@@ -2,6 +2,7 @@ import { EntityListPage } from '@/components/EntityListPage'
 import { EntityFormDialog } from '@/components/EntityFormDialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { useEntityCrudPage } from '@/hooks/useEntityCrudPage'
+import { NOTES_FIELD } from '@/constants/formFields'
 import {
   useBenefitsList,
   useBenefitsTrashedList,
@@ -18,6 +19,7 @@ export function BenefitsListPage(): React.JSX.Element {
     description: 'Manage benefit plans and employee enrollments',
     emptyTitle: 'No benefit plans found',
     entitySingular: 'benefit plan',
+    formFields: [NOTES_FIELD],
     hooks: {
       useList: useBenefitsList,
       useTrashedList: useBenefitsTrashedList,

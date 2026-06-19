@@ -6,6 +6,7 @@ import { PublicLayout } from '@/layouts/PublicLayout'
 import { ProtectedRoute } from '@/routes/protectedRoute'
 import { PageLoader } from '@/components/PageLoader'
 import { ROUTES } from '@/constants/routes'
+import { PERMISSIONS } from '@/constants/permissions'
 import * as Lazy from './lazyRoutes'
 
 interface SuspenseWrapProps {
@@ -33,6 +34,7 @@ export const router = createBrowserRouter([
       { path: 'login', element: <SuspenseWrap><Lazy.LoginPage /></SuspenseWrap> },
       { path: 'register', element: <SuspenseWrap><Lazy.RegisterPage /></SuspenseWrap> },
       { path: 'forgot-password', element: <SuspenseWrap><Lazy.ForgotPasswordPage /></SuspenseWrap> },
+      { path: 'reset-password', element: <SuspenseWrap><Lazy.ResetPasswordPage /></SuspenseWrap> },
     ],
   },
   {
@@ -63,9 +65,15 @@ export const router = createBrowserRouter([
           { path: 'reports', element: <SuspenseWrap><Lazy.ReportsListPage /></SuspenseWrap> },
           { path: 'analytics', element: <SuspenseWrap><Lazy.AnalyticsListPage /></SuspenseWrap> },
           { path: 'settings', element: <SuspenseWrap><Lazy.SettingsListPage /></SuspenseWrap> },
-          { path: 'tenants', element: <SuspenseWrap><Lazy.TenantsListPage /></SuspenseWrap> },
-          { path: 'billing', element: <SuspenseWrap><Lazy.BillingListPage /></SuspenseWrap> },
-          { path: 'admin/health', element: <SuspenseWrap><Lazy.SystemListPage /></SuspenseWrap> },
+          { path: 'tenants', element: <ProtectedRoute permissions={[PERMISSIONS.tenantsManage]} />, children: [
+            { index: true, element: <SuspenseWrap><Lazy.TenantsListPage /></SuspenseWrap> },
+          ] },
+          { path: 'billing', element: <ProtectedRoute permissions={[PERMISSIONS.billingRead]} />, children: [
+            { index: true, element: <SuspenseWrap><Lazy.BillingListPage /></SuspenseWrap> },
+          ] },
+          { path: 'admin/health', element: <ProtectedRoute permissions={[PERMISSIONS.tenantsManage]} />, children: [
+            { index: true, element: <SuspenseWrap><Lazy.SystemListPage /></SuspenseWrap> },
+          ] },
           { path: 'onboarding', element: <SuspenseWrap><Lazy.OnboardingListPage /></SuspenseWrap> },
           { path: 'benefits', element: <SuspenseWrap><Lazy.BenefitsListPage /></SuspenseWrap> },
           { path: 'training', element: <SuspenseWrap><Lazy.TrainingListPage /></SuspenseWrap> },

@@ -1,6 +1,7 @@
 export {
   useRecruitmentList,
   useRecruitmentTrashedList,
+  useRecruitmentApplicantsList,
   useCreateRecruitment,
   useUpdateRecruitment,
   useSoftDeleteRecruitment,

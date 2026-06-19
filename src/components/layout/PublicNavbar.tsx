@@ -1,6 +1,6 @@
 import { Link, NavLink } from 'react-router-dom'
 import { Menu } from 'lucide-react'
-import { Button } from '@/ui'
+import { Button, buttonVariants } from '@/ui'
 import { ROUTES } from '@/constants/routes'
 import { PUBLIC_NAV } from '@/constants/publicNavigation'
 import { cn } from '@/utils/cn'
@@ -27,10 +27,8 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }): React.JSX.Elemen
           onClick={onNavigate}
           className={({ isActive }) =>
             cn(
-              'rounded-md px-3 py-2 text-sm font-medium transition-colors',
-              isActive
-                ? 'bg-accent text-accent-foreground'
-                : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+              buttonVariants({ variant: 'ghost', size: 'sm' }),
+              isActive && 'bg-accent text-accent-foreground',
             )
           }
         >

@@ -5,6 +5,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { EmployeeActionDialog } from '@/components/EmployeeActionDialog'
 import { Button } from '@/ui'
 import { useEntityCrudPage } from '@/hooks/useEntityCrudPage'
+import { PERMISSIONS } from '@/constants/permissions'
 import {
   useEmployeesList,
   useEmployeesTrashedList,
@@ -33,6 +34,8 @@ export function EmployeesListPage(): React.JSX.Element {
     description: 'Manage employee records, promotions, and transfers',
     emptyTitle: 'No employees found',
     entitySingular: 'employee',
+    writePermission: PERMISSIONS.employeesWrite,
+    createPermission: PERMISSIONS.employeesWrite,
     hooks: {
       useList: useEmployeesList,
       useTrashedList: useEmployeesTrashedList,

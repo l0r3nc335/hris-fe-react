@@ -15,6 +15,7 @@ export interface ModalProps {
   title: string
   description?: string
   children: ReactNode
+  footer?: ReactNode
   trigger?: ReactNode
 }
 
@@ -24,6 +25,7 @@ export function Modal({
   title,
   description,
   children,
+  footer,
   trigger,
 }: ModalProps): React.JSX.Element {
   return (
@@ -40,6 +42,7 @@ export function Modal({
           </Button>
         </div>
         <div className="mt-4">{children}</div>
+        {footer ? <div className="mt-4 flex justify-end gap-2">{footer}</div> : null}
       </DialogContent>
     </Dialog>
   )

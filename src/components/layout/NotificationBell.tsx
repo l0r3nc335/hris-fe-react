@@ -10,12 +10,18 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { useUnreadNotifications } from '@/queries/notifications/queries'
+import {
+  useUnreadNotifications,
+  useMarkNotificationRead,
+  useMarkAllNotificationsRead,
+} from '@/queries/notifications/queries'
 import { ROUTES } from '@/constants/routes'
 import { cn } from '@/utils/cn'
 
 export function NotificationBell(): React.JSX.Element {
   const { data: notifications = [], isLoading } = useUnreadNotifications()
+  const markRead = useMarkNotificationRead()
+  const markAllRead = useMarkAllNotificationsRead()
   const unreadCount = notifications.filter((n) => !n.read).length
 
   return (
@@ -34,8 +40,19 @@ export function NotificationBell(): React.JSX.Element {
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
-        <PopoverHeader className="border-b border-border px-4 py-3">
+        <PopoverHeader className="flex items-center justify-between border-b border-border px-4 py-3">
           <PopoverTitle>Notifications</PopoverTitle>
+          {unreadCount > 0 ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-auto px-2 py-1 text-xs"
+              onClick={() => markAllRead.mutate()}
+              disabled={markAllRead.isPending}
+            >
+              Mark all read
+            </Button>
+          ) : null}
         </PopoverHeader>
         <ScrollArea className="max-h-72">
           {isLoading ? (
@@ -45,15 +62,20 @@ export function NotificationBell(): React.JSX.Element {
           ) : (
             <ul className="divide-y divide-border">
               {notifications.slice(0, 8).map((notification) => (
-                <li
-                  key={notification.id}
-                  className={cn(
-                    'px-4 py-3 text-sm',
-                    !notification.read && 'bg-muted/50',
-                  )}
-                >
-                  <p className="font-medium">{notification.title}</p>
-                  <p className="text-xs text-muted-foreground">{notification.message}</p>
+                <li key={notification.id}>
+                  <button
+                    type="button"
+                    className={cn(
+                      'w-full px-4 py-3 text-left text-sm transition-colors hover:bg-muted/50',
+                      !notification.read && 'bg-muted/50',
+                    )}
+                    onClick={() => {
+                      if (!notification.read) markRead.mutate(notification.id)
+                    }}
+                  >
+                    <p className="font-medium">{notification.title}</p>
+                    <p className="text-xs text-muted-foreground">{notification.message}</p>
+                  </button>
                 </li>
               ))}
             </ul>

@@ -4,7 +4,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { PageShell } from '@/components/layout/PageShell'
 import { OrgChartTree } from '@/components/OrgChartTree'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs } from '@/ui'
 import { useEntityCrudPage } from '@/hooks/useEntityCrudPage'
 import {
   useOrganizationList,
@@ -38,31 +38,40 @@ export function OrganizationListPage(): React.JSX.Element {
 
   return (
     <PageShell title="Organization" description="View org chart and manage organization nodes">
-      <Tabs defaultValue="chart">
-        <TabsList>
-          <TabsTrigger value="chart">Org Chart</TabsTrigger>
-          <TabsTrigger value="list">Node List</TabsTrigger>
-        </TabsList>
-        <TabsContent value="chart" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Organization Structure</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {treeLoading ? (
-                <p className="text-sm text-muted-foreground">Loading org chart...</p>
-              ) : (
-                <OrgChartTree nodes={tree} />
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="list" className="mt-4">
-          <EntityListPage {...crud.listPageProps} title="" description="" embedded />
-          <EntityFormDialog {...crud.formDialogProps} />
-          <ConfirmDialog {...crud.confirmDialogProps} />
-        </TabsContent>
-      </Tabs>
+      <Tabs
+        defaultValue="chart"
+        items={[
+          {
+            value: 'chart',
+            label: 'Org Chart',
+            content: (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Organization Structure</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {treeLoading ? (
+                    <p className="text-sm text-muted-foreground">Loading org chart...</p>
+                  ) : (
+                    <OrgChartTree nodes={tree} />
+                  )}
+                </CardContent>
+              </Card>
+            ),
+          },
+          {
+            value: 'list',
+            label: 'Node List',
+            content: (
+              <>
+                <EntityListPage {...crud.listPageProps} title="" description="" embedded />
+                <EntityFormDialog {...crud.formDialogProps} />
+                <ConfirmDialog {...crud.confirmDialogProps} />
+              </>
+            ),
+          },
+        ]}
+      />
     </PageShell>
   )
 }

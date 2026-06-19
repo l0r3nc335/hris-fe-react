@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import type { UseQueryResult } from '@tanstack/react-query'
-import type { EntityFormValues } from '@/components/EntityFormDialog'
+import type { EntityFormValues, FormFieldConfig } from '@/components/EntityFormDialog'
 import type { EntityListPageProps } from '@/components/EntityListPage'
 import type { ConfirmDialogProps } from '@/components/ConfirmDialog'
 import type { CreateBody, UpdateBody } from '@/services/api/client'
+import type { Permission } from '@/constants/permissions'
 
 interface EntityListItem {
   id: string
@@ -34,6 +35,10 @@ export interface UseEntityCrudPageConfig {
   emptyTitle: string
   entitySingular: string
   readOnly?: boolean
+  formFields?: FormFieldConfig[]
+  statusOptions?: import('@/ui/Select').SelectOption[]
+  createPermission?: Permission
+  writePermission?: Permission
   hooks: EntityCrudHooks | (Pick<EntityCrudHooks, 'useList'> & Partial<Omit<EntityCrudHooks, 'useList'>>)
 }
 
@@ -49,12 +54,24 @@ export interface UseEntityCrudPageResult {
     initialValues?: EntityFormValues
     onSubmit: (data: EntityFormValues) => void
     isPending: boolean
+    formFields?: FormFieldConfig[]
+    statusOptions?: import('@/ui/Select').SelectOption[]
   }
   confirmDialogProps: ConfirmDialogProps
 }
 
 export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCrudPageResult {
-  const { title, description, emptyTitle, entitySingular, readOnly = false } = config
+  const {
+    title,
+    description,
+    emptyTitle,
+    entitySingular,
+    readOnly = false,
+    formFields = [],
+    statusOptions,
+    createPermission,
+    writePermission,
+  } = config
   const [showDeleted, setShowDeleted] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create')
@@ -87,13 +104,26 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
     setFormOpen(true)
   }
 
+  const toApiBody = (data: EntityFormValues): CreateBody & UpdateBody => {
+    const body: CreateBody & UpdateBody = {
+      name: data.name,
+      status: data.status,
+    }
+    for (const field of formFields) {
+      const value = data[field.key]
+      if (value) body[field.key] = value
+    }
+    return body
+  }
+
   const handleFormSubmit = (data: EntityFormValues): void => {
+    const body = toApiBody(data)
     if (formMode === 'create') {
-      createMutation.mutate(data)
+      createMutation.mutate(body)
       return
     }
     if (editingItem) {
-      updateMutation.mutate({ id: editingItem.id, body: data })
+      updateMutation.mutate({ id: editingItem.id, body })
     }
   }
 
@@ -167,16 +197,22 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
           : (id) => setConfirmAction({ action: 'restore', id }),
       showActions: !readOnly,
       isTrashedView: showDeleted,
+      createPermission,
+      writePermission,
     },
     formDialogProps: {
       open: formOpen,
       onOpenChange: setFormOpen,
       mode: formMode,
       title: formMode === 'create' ? `Create ${entitySingular}` : `Edit ${entitySingular}`,
-      initialValues: editingItem ?? undefined,
+      initialValues: editingItem
+        ? { name: editingItem.name, status: editingItem.status }
+        : undefined,
       onSubmit: handleFormSubmit,
       isPending:
         formMode === 'create' ? createMutation.isPending : updateMutation.isPending,
+      formFields,
+      statusOptions,
     },
     confirmDialogProps: {
       open: confirmAction !== null,

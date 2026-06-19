@@ -3,7 +3,7 @@ import { EntityListPage } from '@/components/EntityListPage'
 import { EntityFormDialog } from '@/components/EntityFormDialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { PageShell } from '@/components/layout/PageShell'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs } from '@/ui'
 import { Button } from '@/ui'
 import { useEntityCrudPage } from '@/hooks/useEntityCrudPage'
 import {
@@ -49,47 +49,57 @@ export function LeaveListPage(): React.JSX.Element {
 
   return (
     <PageShell title="Leave" description="Manage leave requests and approvals">
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          <TabsTrigger value="all">All Requests</TabsTrigger>
-          <TabsTrigger value="pending">Pending Approval</TabsTrigger>
-        </TabsList>
-        <TabsContent value="all" className="mt-4">
-          <EntityListPage {...crud.listPageProps} title="" description="" embedded />
-          <EntityFormDialog {...crud.formDialogProps} />
-          <ConfirmDialog {...crud.confirmDialogProps} />
-        </TabsContent>
-        <TabsContent value="pending" className="mt-4">
-          <EntityListPage
-            title=""
-            description=""
-            emptyTitle="No pending leave requests"
-            items={pendingItems}
-            isLoading={pendingLoading}
-            showActions
-            embedded
-            extraRowActions={(item) => (
+      <Tabs
+        value={tab}
+        onValueChange={setTab}
+        items={[
+          {
+            value: 'all',
+            label: 'All Requests',
+            content: (
               <>
-                <Button
-                  size="sm"
-                  onClick={() => approveMutation.mutate(item.id)}
-                  disabled={approveMutation.isPending}
-                >
-                  Approve
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => rejectMutation.mutate({ id: item.id })}
-                  disabled={rejectMutation.isPending}
-                >
-                  Reject
-                </Button>
+                <EntityListPage {...crud.listPageProps} title="" description="" embedded />
+                <EntityFormDialog {...crud.formDialogProps} />
+                <ConfirmDialog {...crud.confirmDialogProps} />
               </>
-            )}
-          />
-        </TabsContent>
-      </Tabs>
+            ),
+          },
+          {
+            value: 'pending',
+            label: 'Pending Approval',
+            content: (
+              <EntityListPage
+                title=""
+                description=""
+                emptyTitle="No pending leave requests"
+                items={pendingItems}
+                isLoading={pendingLoading}
+                showActions
+                embedded
+                extraRowActions={(item) => (
+                  <>
+                    <Button
+                      size="sm"
+                      onClick={() => approveMutation.mutate(item.id)}
+                      disabled={approveMutation.isPending}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => rejectMutation.mutate({ id: item.id })}
+                      disabled={rejectMutation.isPending}
+                    >
+                      Reject
+                    </Button>
+                  </>
+                )}
+              />
+            ),
+          },
+        ]}
+      />
     </PageShell>
   )
 }

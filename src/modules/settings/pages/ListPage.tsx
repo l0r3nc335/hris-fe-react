@@ -1,8 +1,10 @@
+import { useMemo } from 'react'
 import { EntityListPage } from '@/components/EntityListPage'
 import { EntityFormDialog } from '@/components/EntityFormDialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { PageShell } from '@/components/layout/PageShell'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs } from '@/ui'
+import { PERMISSIONS } from '@/constants/permissions'
 import { useEntityCrudPage } from '@/hooks/useEntityCrudPage'
 import {
   useSettingsList,
@@ -14,12 +16,21 @@ import {
   useRemoveSettings,
 } from '../hooks'
 
+const SETTINGS_CATEGORIES = [
+  { value: 'general', label: 'General' },
+  { value: 'company', label: 'Company' },
+  { value: 'leave-types', label: 'Leave Types' },
+]
+
 export function SettingsListPage(): React.JSX.Element {
   const crud = useEntityCrudPage({
     title: 'Settings',
     description: 'Configure company and system settings',
     emptyTitle: 'No settings found',
     entitySingular: 'setting',
+    writePermission: PERMISSIONS.settingsWrite,
+    createPermission: PERMISSIONS.settingsWrite,
+    statusOptions: SETTINGS_CATEGORIES,
     hooks: {
       useList: useSettingsList,
       useTrashedList: useSettingsTrashedList,
@@ -31,36 +42,30 @@ export function SettingsListPage(): React.JSX.Element {
     },
   })
 
+  const tabItems = useMemo(
+    () =>
+      SETTINGS_CATEGORIES.map((category) => ({
+        value: category.value,
+        label: category.label,
+        content: (
+          <EntityListPage
+            {...crud.listPageProps}
+            title=""
+            description=""
+            items={crud.listPageProps.items.filter(
+              (item) => item.status === category.value,
+            )}
+            emptyTitle={`No ${category.label.toLowerCase()} settings configured`}
+            embedded
+          />
+        ),
+      })),
+    [crud.listPageProps],
+  )
+
   return (
     <PageShell title="Settings" description="Configure company and system settings">
-      <Tabs defaultValue="general">
-        <TabsList>
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="company">Company</TabsTrigger>
-          <TabsTrigger value="leave-types">Leave Types</TabsTrigger>
-        </TabsList>
-        <TabsContent value="general" className="mt-4">
-          <EntityListPage {...crud.listPageProps} title="" description="" embedded />
-        </TabsContent>
-        <TabsContent value="company" className="mt-4">
-          <EntityListPage
-            {...crud.listPageProps}
-            title=""
-            description=""
-            emptyTitle="No company settings configured"
-            embedded
-          />
-        </TabsContent>
-        <TabsContent value="leave-types" className="mt-4">
-          <EntityListPage
-            {...crud.listPageProps}
-            title=""
-            description=""
-            emptyTitle="No leave types configured"
-            embedded
-          />
-        </TabsContent>
-      </Tabs>
+      <Tabs defaultValue="general" items={tabItems} />
       <EntityFormDialog {...crud.formDialogProps} />
       <ConfirmDialog {...crud.confirmDialogProps} />
     </PageShell>

@@ -10,12 +10,16 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { useMessagesInbox } from '@/queries/notifications/queries'
+import {
+  useMessagesInbox,
+  useMarkNotificationRead,
+} from '@/queries/notifications/queries'
 import { ROUTES } from '@/constants/routes'
 import { cn } from '@/utils/cn'
 
 export function MessageInbox(): React.JSX.Element {
   const { data: messages = [], isLoading } = useMessagesInbox()
+  const markRead = useMarkNotificationRead()
   const unreadCount = messages.filter((m) => !m.read).length
 
   return (
@@ -45,12 +49,20 @@ export function MessageInbox(): React.JSX.Element {
           ) : (
             <ul className="divide-y divide-border">
               {messages.slice(0, 8).map((message) => (
-                <li
-                  key={message.id}
-                  className={cn('px-4 py-3 text-sm', !message.read && 'bg-muted/50')}
-                >
-                  <p className="font-medium">{message.from}</p>
-                  <p className="truncate text-xs text-muted-foreground">{message.subject}</p>
+                <li key={message.id}>
+                  <button
+                    type="button"
+                    className={cn(
+                      'w-full px-4 py-3 text-left text-sm transition-colors hover:bg-muted/50',
+                      !message.read && 'bg-muted/50',
+                    )}
+                    onClick={() => {
+                      if (!message.read) markRead.mutate(message.id)
+                    }}
+                  >
+                    <p className="font-medium">{message.from}</p>
+                    <p className="truncate text-xs text-muted-foreground">{message.subject}</p>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -58,7 +70,7 @@ export function MessageInbox(): React.JSX.Element {
         </ScrollArea>
         <div className="border-t border-border p-2">
           <Button variant="ghost" size="sm" className="w-full" asChild>
-            <Link to={ROUTES.notifications}>View all messages</Link>
+            <Link to={ROUTES.notifications}>View all notifications</Link>
           </Button>
         </div>
       </PopoverContent>

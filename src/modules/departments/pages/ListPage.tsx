@@ -2,6 +2,7 @@ import { EntityListPage } from '@/components/EntityListPage'
 import { EntityFormDialog } from '@/components/EntityFormDialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { useEntityCrudPage } from '@/hooks/useEntityCrudPage'
+import { PERMISSIONS } from '@/constants/permissions'
 import {
   useDepartmentsList,
   useDepartmentsTrashedList,
@@ -18,6 +19,7 @@ export function DepartmentsListPage(): React.JSX.Element {
     description: 'Manage department records',
     emptyTitle: 'No departments found',
     entitySingular: 'department',
+    writePermission: PERMISSIONS.departmentsRead,
     hooks: {
       useList: useDepartmentsList,
       useTrashedList: useDepartmentsTrashedList,

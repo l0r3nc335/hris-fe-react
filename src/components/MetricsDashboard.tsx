@@ -38,14 +38,7 @@ export function MetricsDashboard({
 }: MetricsDashboardProps): React.JSX.Element {
   if (isLoading) return <PageLoader />
 
-  const activity =
-    recentActivity.length > 0
-      ? recentActivity
-      : [
-          { id: '1', label: 'Payroll run completed', time: '2 hours ago' },
-          { id: '2', label: '3 leave requests pending approval', time: '4 hours ago' },
-          { id: '3', label: 'New employee onboarded', time: 'Yesterday' },
-        ]
+  const activity = recentActivity
 
   return (
     <PageShell title={title} description={description}>
@@ -92,14 +85,18 @@ export function MetricsDashboard({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-3">
-              {activity.map((item) => (
-                <li key={item.id} className="flex items-start justify-between gap-2 text-sm">
-                  <span>{item.label}</span>
-                  <span className="shrink-0 text-xs text-muted-foreground">{item.time}</span>
-                </li>
-              ))}
-            </ul>
+            {activity.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No recent activity</p>
+            ) : (
+              <ul className="space-y-3">
+                {activity.map((item) => (
+                  <li key={item.id} className="flex items-start justify-between gap-2 text-sm">
+                    <span>{item.label}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{item.time}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -48,6 +48,7 @@ export const queryKeys = {
     all: ['recruitment'] as const,
     list: () => [...queryKeys.recruitment.all, 'list'] as const,
     trashed: () => [...queryKeys.recruitment.all, 'trashed'] as const,
+    applicants: () => [...queryKeys.recruitment.all, 'applicants'] as const,
   },
   interviews: {
     all: ['interviews'] as const,

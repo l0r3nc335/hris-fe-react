@@ -8,6 +8,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { buttonVariants } from '@/ui'
+import { cn } from '@/utils/cn'
 
 export interface ConfirmDialogProps {
   open: boolean
@@ -41,7 +43,7 @@ export function ConfirmDialog({
           <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             disabled={isPending}
-            className={destructive ? 'bg-destructive text-white hover:bg-destructive/90' : undefined}
+            className={cn(destructive && buttonVariants({ variant: 'destructive' }))}
             onClick={(e) => {
               e.preventDefault()
               onConfirm()

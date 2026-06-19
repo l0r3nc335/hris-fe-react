@@ -2,6 +2,7 @@ import { EntityListPage } from '@/components/EntityListPage'
 import { EntityFormDialog } from '@/components/EntityFormDialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { useEntityCrudPage } from '@/hooks/useEntityCrudPage'
+import { PERMISSIONS } from '@/constants/permissions'
 import {
   useTenantsList,
   useTenantsTrashedList,
@@ -18,6 +19,8 @@ export function TenantsListPage(): React.JSX.Element {
     description: 'Manage tenants records',
     emptyTitle: 'No tenants found',
     entitySingular: 'tenant',
+    createPermission: PERMISSIONS.tenantsManage,
+    writePermission: PERMISSIONS.tenantsManage,
     hooks: {
       useList: useTenantsList,
       useTrashedList: useTenantsTrashedList,

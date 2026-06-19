@@ -19,6 +19,7 @@ export const notificationsApi = api
 export function fetchUnreadNotifications(): Promise<NotificationItem[]> {
   return apiGet<Array<{
     id: string
+    tenantId?: string
     title: string
     message: string
     read: boolean
@@ -26,6 +27,7 @@ export function fetchUnreadNotifications(): Promise<NotificationItem[]> {
   }>>(endpoints.notifications.recent).then((items) =>
     items.map((item) => ({
       id: item.id,
+      tenantId: item.tenantId ?? '',
       name: item.title,
       title: item.title,
       message: item.message,

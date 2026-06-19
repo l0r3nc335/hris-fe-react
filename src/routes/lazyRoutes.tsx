@@ -24,6 +24,9 @@ export const RegisterPage = lazy(() =>
 export const ForgotPasswordPage = lazy(() =>
   import('@/modules/auth/pages/ForgotPasswordPage').then((m) => ({ default: m.ForgotPasswordPage })),
 )
+export const ResetPasswordPage = lazy(() =>
+  import('@/modules/auth/pages/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })),
+)
 export const UsersListPage = lazy(() =>
   import('@/modules/users/pages/ListPage').then((m) => ({ default: m.UsersListPage })),
 )

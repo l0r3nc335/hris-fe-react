@@ -2,6 +2,7 @@ import { EntityListPage } from '@/components/EntityListPage'
 import { EntityFormDialog } from '@/components/EntityFormDialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { useEntityCrudPage } from '@/hooks/useEntityCrudPage'
+import { NOTES_FIELD } from '@/constants/formFields'
 import {
   useNotificationsList,
   useNotificationsTrashedList,
@@ -18,6 +19,7 @@ export function NotificationsListPage(): React.JSX.Element {
     description: 'Manage notifications records',
     emptyTitle: 'No notifications found',
     entitySingular: 'notification',
+    formFields: [NOTES_FIELD],
     hooks: {
       useList: useNotificationsList,
       useTrashedList: useNotificationsTrashedList,

@@ -1,13 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { EntityListPage } from '@/components/EntityListPage'
 import { EntityFormDialog } from '@/components/EntityFormDialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { PageShell } from '@/components/layout/PageShell'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs } from '@/ui'
 import { useEntityCrudPage } from '@/hooks/useEntityCrudPage'
 import {
   useRecruitmentList,
   useRecruitmentTrashedList,
+  useRecruitmentApplicantsList,
   useCreateRecruitment,
   useUpdateRecruitment,
   useSoftDeleteRecruitment,
@@ -17,12 +18,13 @@ import {
 
 export function RecruitmentListPage(): React.JSX.Element {
   const [tab, setTab] = useState('jobs')
+  const { data: applicants = [], isLoading: applicantsLoading } = useRecruitmentApplicantsList()
 
   const crud = useEntityCrudPage({
     title: 'Recruitment',
     description: 'Manage job postings and applicants',
-    emptyTitle: 'No records found',
-    entitySingular: 'record',
+    emptyTitle: 'No job postings found',
+    entitySingular: 'job posting',
     hooks: {
       useList: useRecruitmentList,
       useTrashedList: useRecruitmentTrashedList,
@@ -34,45 +36,42 @@ export function RecruitmentListPage(): React.JSX.Element {
     },
   })
 
-  const jobItems = useMemo(
-    () => crud.listPageProps.items.filter((item) => !item.name.toLowerCase().includes('applicant')),
-    [crud.listPageProps.items],
-  )
-
-  const applicantItems = useMemo(
-    () => crud.listPageProps.items.filter((item) => item.name.toLowerCase().includes('applicant')),
-    [crud.listPageProps.items],
-  )
-
   return (
     <PageShell title="Recruitment" description="Manage job postings and applicants">
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          <TabsTrigger value="jobs">Job Postings</TabsTrigger>
-          <TabsTrigger value="applicants">Applicants</TabsTrigger>
-        </TabsList>
-        <TabsContent value="jobs" className="mt-4">
-          <EntityListPage
-            {...crud.listPageProps}
-            title=""
-            description=""
-            items={jobItems}
-            emptyTitle="No job postings found"
-            embedded
-          />
-        </TabsContent>
-        <TabsContent value="applicants" className="mt-4">
-          <EntityListPage
-            {...crud.listPageProps}
-            title=""
-            description=""
-            items={applicantItems}
-            emptyTitle="No applicants found"
-            onCreate={undefined}
-            embedded
-          />
-        </TabsContent>
-      </Tabs>
+      <Tabs
+        value={tab}
+        onValueChange={setTab}
+        items={[
+          {
+            value: 'jobs',
+            label: 'Job Postings',
+            content: (
+              <EntityListPage
+                {...crud.listPageProps}
+                title=""
+                description=""
+                embedded
+              />
+            ),
+          },
+          {
+            value: 'applicants',
+            label: 'Applicants',
+            content: (
+              <EntityListPage
+                {...crud.listPageProps}
+                title=""
+                description=""
+                items={applicants}
+                isLoading={applicantsLoading}
+                emptyTitle="No applicants found"
+                onCreate={undefined}
+                embedded
+              />
+            ),
+          },
+        ]}
+      />
       <EntityFormDialog {...crud.formDialogProps} />
       <ConfirmDialog {...crud.confirmDialogProps} />
     </PageShell>

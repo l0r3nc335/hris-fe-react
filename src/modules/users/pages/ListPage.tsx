@@ -1,6 +1,8 @@
 import { EntityListPage } from '@/components/EntityListPage'
 import { EntityFormDialog } from '@/components/EntityFormDialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { EMAIL_FIELD } from '@/constants/formFields'
+import { PERMISSIONS } from '@/constants/permissions'
 import { useEntityCrudPage } from '@/hooks/useEntityCrudPage'
 import {
   useUsersList,
@@ -15,9 +17,12 @@ import {
 export function UsersListPage(): React.JSX.Element {
   const crud = useEntityCrudPage({
     title: 'Users',
-    description: 'Manage users records',
+    description: 'Manage user accounts',
     emptyTitle: 'No users found',
     entitySingular: 'user',
+    formFields: [EMAIL_FIELD],
+    createPermission: PERMISSIONS.usersWrite,
+    writePermission: PERMISSIONS.usersWrite,
     hooks: {
       useList: useUsersList,
       useTrashedList: useUsersTrashedList,

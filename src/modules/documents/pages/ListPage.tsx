@@ -2,6 +2,7 @@ import { EntityListPage } from '@/components/EntityListPage'
 import { EntityFormDialog } from '@/components/EntityFormDialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { useEntityCrudPage } from '@/hooks/useEntityCrudPage'
+import { NOTES_FIELD } from '@/constants/formFields'
 import {
   useDocumentsList,
   useDocumentsTrashedList,
@@ -18,6 +19,7 @@ export function DocumentsListPage(): React.JSX.Element {
     description: 'Manage documents records',
     emptyTitle: 'No documents found',
     entitySingular: 'document',
+    formFields: [NOTES_FIELD],
     hooks: {
       useList: useDocumentsList,
       useTrashedList: useDocumentsTrashedList,

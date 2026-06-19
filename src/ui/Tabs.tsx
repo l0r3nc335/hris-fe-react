@@ -8,13 +8,24 @@ export interface TabsItem {
 }
 
 export interface TabsProps {
-  defaultValue: string
+  defaultValue?: string
+  value?: string
+  onValueChange?: (value: string) => void
   items: TabsItem[]
 }
 
-export function Tabs({ defaultValue, items }: TabsProps): React.JSX.Element {
+export function Tabs({
+  defaultValue,
+  value,
+  onValueChange,
+  items,
+}: TabsProps): React.JSX.Element {
   return (
-    <TabsRoot defaultValue={defaultValue}>
+    <TabsRoot
+      defaultValue={defaultValue}
+      value={value}
+      onValueChange={onValueChange}
+    >
       <TabsList>
         {items.map((item) => (
           <TabsTrigger key={item.value} value={item.value}>

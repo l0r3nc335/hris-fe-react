@@ -1,9 +1,7 @@
 import type { ReactNode } from 'react'
 import { Search } from 'lucide-react'
-import { Input } from '@/components/ui/input'
+import { Button, Input, Label, Select } from '@/ui'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
-import { Button } from '@/ui'
 
 export interface DataTableToolbarProps {
   searchValue?: string
@@ -11,9 +9,17 @@ export interface DataTableToolbarProps {
   searchPlaceholder?: string
   showDeleted?: boolean
   onShowDeletedChange?: (show: boolean) => void
+  statusFilter?: string
+  onStatusFilterChange?: (value: string) => void
   primaryAction?: ReactNode
   extra?: ReactNode
 }
+
+const STATUS_FILTER_OPTIONS = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+]
 
 export function DataTableToolbar({
   searchValue = '',
@@ -21,6 +27,8 @@ export function DataTableToolbar({
   searchPlaceholder = 'Search records...',
   showDeleted,
   onShowDeletedChange,
+  statusFilter,
+  onStatusFilterChange,
   primaryAction,
   extra,
 }: DataTableToolbarProps): React.JSX.Element {
@@ -41,6 +49,16 @@ export function DataTableToolbar({
       </div>
       <div className="flex flex-wrap items-center gap-3">
         {extra}
+        {onStatusFilterChange ? (
+          <div className="w-40">
+            <Select
+              value={statusFilter ?? 'all'}
+              onValueChange={onStatusFilterChange}
+              placeholder="Filter status"
+              options={STATUS_FILTER_OPTIONS}
+            />
+          </div>
+        ) : null}
         {onShowDeletedChange ? (
           <div className="flex items-center gap-2">
             <Checkbox

@@ -1,7 +1,22 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/queryKeys'
-import { generateReport, type ReportType } from '@/services/api/reportsApi'
+import { generateReport, fetchReportTypes, type ReportType } from '@/services/api/reportsApi'
 import { toast } from 'sonner'
+
+const REPORT_DESCRIPTIONS: Record<ReportType, string> = {
+  employees: 'Headcount and demographics',
+  attendance: 'Daily attendance summary',
+  payroll: 'Payroll costs and runs',
+  leaveUsage: 'Leave balances and usage',
+  turnover: 'Hiring and attrition metrics',
+}
+
+export function useReportTypes() {
+  return useQuery({
+    queryKey: [...queryKeys.reports.all, 'types'] as const,
+    queryFn: fetchReportTypes,
+  })
+}
 
 export function useReportGenerateMutation() {
   const queryClient = useQueryClient()
@@ -14,10 +29,6 @@ export function useReportGenerateMutation() {
   })
 }
 
-export const REPORT_TYPES: { type: ReportType; label: string; description: string }[] = [
-  { type: 'employees', label: 'Employee Report', description: 'Headcount and demographics' },
-  { type: 'attendance', label: 'Attendance Report', description: 'Daily attendance summary' },
-  { type: 'payroll', label: 'Payroll Report', description: 'Payroll costs and runs' },
-  { type: 'leaveUsage', label: 'Leave Usage', description: 'Leave balances and usage' },
-  { type: 'turnover', label: 'Turnover Report', description: 'Hiring and attrition metrics' },
-]
+export function getReportDescription(type: ReportType): string {
+  return REPORT_DESCRIPTIONS[type]
+}

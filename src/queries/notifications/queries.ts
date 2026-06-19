@@ -39,6 +39,7 @@ export function useMarkNotificationRead() {
     mutationFn: markNotificationRead,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.notificationsUnread.all })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.messages.all })
     },
   })
 }
@@ -49,6 +50,7 @@ export function useMarkAllNotificationsRead() {
     mutationFn: markAllNotificationsRead,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.notificationsUnread.all })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.messages.all })
     },
   })
 }

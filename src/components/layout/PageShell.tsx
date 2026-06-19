@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { PageHeader } from '@/components/PageHeader'
 import { AppBreadcrumbs } from './AppBreadcrumbs'
 import { AppFooter } from './AppFooter'
 
@@ -27,21 +28,9 @@ export function PageShell({
             <AppBreadcrumbs />
           </div>
         ) : null}
-        {(title || description || toolbar) && (
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            {(title || description) && (
-              <div>
-                {title ? (
-                  <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-                ) : null}
-                {description ? (
-                  <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-                ) : null}
-              </div>
-            )}
-            {toolbar ? <div className="flex shrink-0 items-center gap-2">{toolbar}</div> : null}
-          </div>
-        )}
+        {title || description || toolbar ? (
+          <PageHeader title={title ?? ''} description={description} action={toolbar} />
+        ) : null}
         {children}
       </div>
       {showFooter ? <AppFooter /> : null}
