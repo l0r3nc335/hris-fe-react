@@ -12,8 +12,16 @@ function createMutationMock() {
 
 function createHooks(overrides?: Partial<Parameters<typeof useEntityCrudPage>[0]['hooks']>) {
   return {
-    useList: () => ({ data: mockListItems, isLoading: false }),
-    useTrashedList: () => ({ data: [], isLoading: false }),
+    useList: () => ({
+      data: mockListItems,
+      meta: { page: 1, limit: 20, total: mockListItems.length },
+      isLoading: false,
+    }),
+    useTrashedList: () => ({
+      data: [],
+      meta: { page: 1, limit: 20, total: 0 },
+      isLoading: false,
+    }),
     useCreate: createMutationMock,
     useUpdate: createMutationMock,
     useSoftDelete: createMutationMock,

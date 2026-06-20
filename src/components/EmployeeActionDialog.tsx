@@ -28,8 +28,8 @@ export function EmployeeActionDialog({
   onSubmit,
   isPending = false,
 }: EmployeeActionDialogProps): React.JSX.Element {
-  const { data: positions = [] } = usePositionsList()
-  const { data: departments = [] } = useDepartmentsList()
+  const { data: positions = [] } = usePositionsList({ page: 1, limit: 100 })
+  const { data: departments = [] } = useDepartmentsList({ page: 1, limit: 100 })
 
   const {
     control,

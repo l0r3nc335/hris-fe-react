@@ -7,6 +7,7 @@ import {
   Building2,
   Briefcase,
   Network,
+  GitBranch,
   Clock,
   CalendarOff,
   Wallet,
@@ -58,6 +59,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Users', path: ROUTES.users, icon: Users, permission: PERMISSIONS.usersRead },
       { label: 'Employees', path: ROUTES.employees, icon: UserCircle, permission: PERMISSIONS.employeesRead },
+      { label: 'Employee Department', path: ROUTES.employeeDepartments, icon: GitBranch, permission: PERMISSIONS.employeeDepartmentsRead },
       { label: 'Departments', path: ROUTES.departments, icon: Building2, permission: PERMISSIONS.departmentsRead },
       { label: 'Positions', path: ROUTES.positions, icon: Briefcase },
       { label: 'Org Chart', path: ROUTES.orgChart, icon: Network },

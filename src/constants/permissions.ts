@@ -3,6 +3,8 @@ export const PERMISSIONS = {
   usersWrite: 'users:write',
   employeesRead: 'employees:read',
   employeesWrite: 'employees:write',
+  employeeDepartmentsRead: 'employee-departments:read',
+  employeeDepartmentsWrite: 'employee-departments:write',
   departmentsRead: 'departments:read',
   leaveApprove: 'leave:approve',
   payrollRead: 'payroll:read',

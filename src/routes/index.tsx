@@ -46,6 +46,7 @@ export const router = createBrowserRouter([
           { path: 'dashboard', element: <SuspenseWrap><Lazy.DashboardPage /></SuspenseWrap> },
           { path: 'users', element: <SuspenseWrap><Lazy.UsersListPage /></SuspenseWrap> },
           { path: 'employees', element: <SuspenseWrap><Lazy.EmployeesListPage /></SuspenseWrap> },
+          { path: 'employee-departments', element: <SuspenseWrap><Lazy.EmployeeDepartmentsListPage /></SuspenseWrap> },
           { path: 'departments', element: <SuspenseWrap><Lazy.DepartmentsListPage /></SuspenseWrap> },
           { path: 'positions', element: <SuspenseWrap><Lazy.PositionsListPage /></SuspenseWrap> },
           { path: 'attendance', element: <SuspenseWrap><Lazy.AttendanceListPage /></SuspenseWrap> },

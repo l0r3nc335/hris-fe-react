@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { EntityListPage } from '@/components/EntityListPage'
 import { EntityFormDialog } from '@/components/EntityFormDialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { PageShell } from '@/components/layout/PageShell'
 import { Tabs } from '@/ui'
 import { useEntityCrudPage } from '@/hooks/useEntityCrudPage'
+import type { ListQueryParams } from '@/services/api/client'
 import {
   useRecruitmentList,
   useRecruitmentTrashedList,
@@ -18,7 +19,27 @@ import {
 
 export function RecruitmentListPage(): React.JSX.Element {
   const [tab, setTab] = useState('jobs')
-  const { data: applicants = [], isLoading: applicantsLoading } = useRecruitmentApplicantsList()
+  const [applicantPage, setApplicantPage] = useState(1)
+  const [applicantLimit, setApplicantLimit] = useState(20)
+  const [applicantSearch, setApplicantSearch] = useState('')
+  const [applicantStatus, setApplicantStatus] = useState('all')
+
+  const applicantParams: ListQueryParams = {
+    page: applicantPage,
+    limit: applicantLimit,
+    q: applicantSearch.trim() || undefined,
+    status: applicantStatus,
+  }
+
+  const {
+    data: applicants = [],
+    meta: applicantMeta,
+    isLoading: applicantsLoading,
+  } = useRecruitmentApplicantsList(applicantParams)
+
+  useEffect(() => {
+    setApplicantPage(1)
+  }, [applicantSearch, applicantStatus])
 
   const crud = useEntityCrudPage({
     title: 'Recruitment',
@@ -59,13 +80,24 @@ export function RecruitmentListPage(): React.JSX.Element {
             label: 'Applicants',
             content: (
               <EntityListPage
-                {...crud.listPageProps}
                 title=""
                 description=""
                 items={applicants}
                 isLoading={applicantsLoading}
                 emptyTitle="No applicants found"
                 onCreate={undefined}
+                total={applicantMeta?.total ?? 0}
+                page={applicantPage}
+                limit={applicantLimit}
+                onPageChange={setApplicantPage}
+                onLimitChange={(nextLimit) => {
+                  setApplicantLimit(nextLimit)
+                  setApplicantPage(1)
+                }}
+                searchValue={applicantSearch}
+                onSearchChange={setApplicantSearch}
+                statusFilter={applicantStatus}
+                onStatusFilterChange={setApplicantStatus}
                 embedded
               />
             ),

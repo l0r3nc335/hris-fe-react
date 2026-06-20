@@ -16,11 +16,6 @@ export interface User extends BaseEntity {
   isActive: boolean
 }
 
-export interface AuthTokens {
-  accessToken: string
-  refreshToken: string
-}
-
 export interface Tenant extends BaseEntity {
   name: string
   slug: string

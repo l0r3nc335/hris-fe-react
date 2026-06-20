@@ -6,11 +6,17 @@ import {
   type QueryKey,
 } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import type { CreateBody, UpdateBody, MutableResourceApi } from '@/services/api/client'
+import type {
+  CreateBody,
+  UpdateBody,
+  MutableResourceApi,
+  ListQueryParams,
+} from '@/services/api/client'
+import type { Paginated, PaginatedMeta } from '@/types/api'
 
 export interface ListResourceApi<T> {
-  list: () => Promise<T[]>
-  listTrashed: () => Promise<T[]>
+  list: (params?: ListQueryParams) => Promise<Paginated<T>>
+  listTrashed: (params?: ListQueryParams) => Promise<Paginated<T>>
   getById: (id: string) => Promise<T>
   create: (body: CreateBody) => Promise<T>
   update: (id: string, body: UpdateBody) => Promise<T>
@@ -18,6 +24,12 @@ export interface ListResourceApi<T> {
   softDelete: (id: string) => Promise<T>
   restore: (id: string) => Promise<T>
   deactivate?: (id: string) => Promise<T>
+}
+
+export interface PaginatedListQueryResult<T> {
+  data: T[] | undefined
+  meta: PaginatedMeta | undefined
+  isLoading: boolean
 }
 
 export function createListQueryOptions<T>(
@@ -30,15 +42,25 @@ export function createListQueryOptions<T>(
   })
 }
 
-export function useListQuery<T>(queryKey: QueryKey, listFn: () => Promise<T[]>) {
+export function useFlatListQuery<T>(queryKey: QueryKey, listFn: () => Promise<T[]>) {
   return useQuery(createListQueryOptions(queryKey, listFn))
 }
 
-export function useTrashedListQuery<T>(
+export function usePaginatedListQuery<T>(
   queryKey: QueryKey,
-  listTrashedFn: () => Promise<T[]>,
-) {
-  return useQuery(createListQueryOptions(queryKey, listTrashedFn))
+  listFn: (params?: ListQueryParams) => Promise<Paginated<T>>,
+  params?: ListQueryParams,
+): PaginatedListQueryResult<T> {
+  const query = useQuery({
+    queryKey: [...(Array.isArray(queryKey) ? queryKey : [queryKey]), params],
+    queryFn: () => listFn(params),
+  })
+
+  return {
+    data: query.data?.data,
+    meta: query.data?.meta,
+    isLoading: query.isLoading,
+  }
 }
 
 export function useCreateMutation<T extends { id: string }>(
@@ -86,7 +108,6 @@ export function useRemoveMutation(
 
 export function useSoftDeleteMutation<T extends { id: string; status: string }>(
   allKey: QueryKey,
-  listKey: QueryKey,
   softDeleteFn: (id: string) => Promise<T>,
 ) {
   const queryClient = useQueryClient()
@@ -94,16 +115,20 @@ export function useSoftDeleteMutation<T extends { id: string; status: string }>(
     mutationFn: softDeleteFn,
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: allKey })
-      const previous = queryClient.getQueryData<T[]>(listKey)
-      queryClient.setQueryData<T[]>(listKey, (old) =>
-        old?.map((e) => (e.id === id ? { ...e, status: 'deleted' } : e)),
-      )
-      return { previous }
+      const previousEntries = queryClient.getQueriesData<Paginated<T>>({ queryKey: allKey })
+      queryClient.setQueriesData<Paginated<T>>({ queryKey: allKey }, (old) => {
+        if (!old?.data) return old
+        return {
+          ...old,
+          data: old.data.map((e) => (e.id === id ? { ...e, status: 'deleted' } : e)),
+        }
+      })
+      return { previousEntries }
     },
     onError: (_err, _id, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(listKey, context.previous)
-      }
+      context?.previousEntries?.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data)
+      })
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: allKey })
@@ -130,7 +155,6 @@ export function useRestoreMutation<T extends { id: string }>(
 
 export function useDeactivateMutation<T extends { id: string; status: string }>(
   allKey: QueryKey,
-  listKey: QueryKey,
   deactivateFn: (id: string) => Promise<T>,
 ) {
   const queryClient = useQueryClient()
@@ -138,16 +162,20 @@ export function useDeactivateMutation<T extends { id: string; status: string }>(
     mutationFn: deactivateFn,
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: allKey })
-      const previous = queryClient.getQueryData<T[]>(listKey)
-      queryClient.setQueryData<T[]>(listKey, (old) =>
-        old?.map((e) => (e.id === id ? { ...e, status: 'inactive' } : e)),
-      )
-      return { previous }
+      const previousEntries = queryClient.getQueriesData<Paginated<T>>({ queryKey: allKey })
+      queryClient.setQueriesData<Paginated<T>>({ queryKey: allKey }, (old) => {
+        if (!old?.data) return old
+        return {
+          ...old,
+          data: old.data.map((e) => (e.id === id ? { ...e, status: 'inactive' } : e)),
+        }
+      })
+      return { previousEntries }
     },
     onError: (_err, _id, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(listKey, context.previous)
-      }
+      context?.previousEntries?.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data)
+      })
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: allKey })
@@ -167,11 +195,13 @@ export function createResourceQueryHooks<T extends { id: string; status: string 
   api: MutableResourceApi<T>,
 ) {
   return {
-    useList: () => useListQuery(keys.list(), api.list),
-    useTrashedList: () => useTrashedListQuery(keys.trashed(), api.listTrashed),
+    useList: (params?: ListQueryParams) =>
+      usePaginatedListQuery([...keys.list(), params], () => api.list(params)),
+    useTrashedList: (params?: ListQueryParams) =>
+      usePaginatedListQuery([...keys.trashed(), params], () => api.listTrashed(params)),
     useCreate: () => useCreateMutation(keys.all, keys.list(), api),
     useUpdate: () => useUpdateMutation(keys.all, api),
-    useSoftDelete: () => useSoftDeleteMutation(keys.all, keys.list(), api.softDelete),
+    useSoftDelete: () => useSoftDeleteMutation(keys.all, api.softDelete),
     useRestore: () => useRestoreMutation(keys.all, api.restore),
     useRemove: () => useRemoveMutation(keys.all, api),
   }

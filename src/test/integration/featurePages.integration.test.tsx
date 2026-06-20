@@ -3,10 +3,12 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { FEATURE_PAGES } from '@/test/features'
 import { renderWithProviders } from '@/test/utils'
 import { seedAuthFromApi } from './helpers'
+import { setTenantId } from '@/services/httpClient'
 
 describe('feature pages integration', () => {
   beforeAll(async () => {
-    await seedAuthFromApi()
+    const user = await seedAuthFromApi()
+    setTenantId(user.tenantId)
   })
   it.each(FEATURE_PAGES)('$slug page renders $title heading', async ({ title, load }) => {
     const { default: Page } = await load()

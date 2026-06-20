@@ -1,12 +1,15 @@
 import { endpoints } from '@/constants/endpoints'
-import { createResourceApi } from './client'
+import { apiGet, apiGetPaginated, type ListQueryParams } from './client'
 import type { AuditEntity } from '@/modules/audit/types'
+import type { Paginated } from '@/types/api'
 
-const api = createResourceApi<AuditEntity>({
-  list: endpoints.audit.list,
-  byId: endpoints.audit.byId,
-})
+export function listAudit(params?: ListQueryParams): Promise<Paginated<AuditEntity>> {
+  return apiGetPaginated<AuditEntity>(endpoints.audit.list, params)
+}
 
-export const listAudit = api.list
-export const getAudit = api.getById
-export const auditApi = api
+export const getAudit = (id: string) => apiGet<AuditEntity>(endpoints.audit.byId(id))
+
+export const auditApi = {
+  list: listAudit,
+  getById: getAudit,
+}

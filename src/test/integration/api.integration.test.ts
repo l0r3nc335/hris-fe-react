@@ -1,42 +1,23 @@
-import axios from 'axios'
 import { describe, expect, it } from 'vitest'
-
-const API_BASE = `${process.env.VITE_API_BASE_URL ?? 'http://localhost:3000'}/api/v1`
-
-async function login(): Promise<{ token: string; tenantId: string }> {
-  const res = await axios.post(`${API_BASE}/auth/login`, {
-    email: 'admin@hris.com',
-    password: 'password',
-  })
-  return {
-    token: res.data.data.tokens.accessToken as string,
-    tenantId: res.data.data.user.tenantId as string,
-  }
-}
-
-function authHeaders(token: string, tenantId: string) {
-  return {
-    Authorization: `Bearer ${token}`,
-    'X-Tenant-Id': tenantId,
-  }
-}
+import { seedAuthFromApi } from './helpers'
+import { httpClient } from '@/services/httpClient'
 
 describe('API integration', () => {
-  it('authenticates with seeded admin credentials', async () => {
-    const { token, tenantId } = await login()
-    expect(token).toBeTruthy()
-    expect(tenantId).toBeTruthy()
+  it('authenticates with seeded admin credentials via HttpOnly cookies', async () => {
+    const user = await seedAuthFromApi()
+    expect(user.email).toBe('admin@hris.com')
+    expect(user.tenantId).toBeTruthy()
   })
 
   it('returns new HRIS module data', async () => {
-    const { token, tenantId } = await login()
-    const headers = authHeaders(token, tenantId)
+    const user = await seedAuthFromApi()
+    const headers = { 'X-Tenant-Id': user.tenantId }
 
     const [onboarding, benefits, training, inbox] = await Promise.all([
-      axios.get(`${API_BASE}/onboarding`, { headers }),
-      axios.get(`${API_BASE}/benefits`, { headers }),
-      axios.get(`${API_BASE}/training`, { headers }),
-      axios.get(`${API_BASE}/messages/inbox`, { headers }),
+      httpClient.get('/onboarding', { headers }),
+      httpClient.get('/benefits', { headers }),
+      httpClient.get('/training', { headers }),
+      httpClient.get('/messages/inbox', { headers }),
     ])
 
     expect(onboarding.data.data.length).toBeGreaterThan(0)
@@ -46,9 +27,9 @@ describe('API integration', () => {
   })
 
   it('returns org chart tree with nested children', async () => {
-    const { token, tenantId } = await login()
-    const res = await axios.get(`${API_BASE}/org/positions-tree`, {
-      headers: authHeaders(token, tenantId),
+    const user = await seedAuthFromApi()
+    const res = await httpClient.get('/org/positions-tree', {
+      headers: { 'X-Tenant-Id': user.tenantId },
     })
 
     expect(Array.isArray(res.data.data)).toBe(true)
@@ -56,9 +37,9 @@ describe('API integration', () => {
   })
 
   it('returns notification details for the header bell', async () => {
-    const { token, tenantId } = await login()
-    const res = await axios.get(`${API_BASE}/notifications/recent`, {
-      headers: authHeaders(token, tenantId),
+    const user = await seedAuthFromApi()
+    const res = await httpClient.get('/notifications/recent', {
+      headers: { 'X-Tenant-Id': user.tenantId },
     })
 
     expect(res.data.data.length).toBeGreaterThan(0)

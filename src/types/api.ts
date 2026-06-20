@@ -3,13 +3,15 @@ export interface ApiResponse<T> {
   message?: string
 }
 
+export interface PaginatedMeta {
+  page: number
+  limit: number
+  total: number
+}
+
 export interface Paginated<T> {
   data: T[]
-  meta: {
-    page: number
-    limit: number
-    total: number
-  }
+  meta: PaginatedMeta
 }
 
 export interface ApiErrorBody {

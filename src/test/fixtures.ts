@@ -27,11 +27,6 @@ export const mockListItems = [
   { id: 'entity-2', name: 'Another record', status: 'inactive' },
 ]
 
-export const mockAuthTokens = {
-  accessToken: 'test-access-token',
-  refreshToken: 'test-refresh-token',
-}
-
 export const mockDashboardMetrics = [
   { label: 'Employees', value: 42 },
   { label: 'Departments', value: 8 },

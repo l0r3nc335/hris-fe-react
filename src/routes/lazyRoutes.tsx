@@ -33,6 +33,11 @@ export const UsersListPage = lazy(() =>
 export const EmployeesListPage = lazy(() =>
   import('@/modules/employees/pages/ListPage').then((m) => ({ default: m.EmployeesListPage })),
 )
+export const EmployeeDepartmentsListPage = lazy(() =>
+  import('@/modules/employeeDepartments/pages/ListPage').then((m) => ({
+    default: m.EmployeeDepartmentsListPage,
+  })),
+)
 export const DepartmentsListPage = lazy(() =>
   import('@/modules/departments/pages/ListPage').then((m) => ({ default: m.DepartmentsListPage })),
 )

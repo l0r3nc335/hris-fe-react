@@ -1,5 +1,12 @@
 import { httpClient } from '@/services/httpClient'
-import type { ApiResponse } from '@/types/api'
+import type { ApiResponse, Paginated } from '@/types/api'
+
+export interface ListQueryParams {
+  page?: number
+  limit?: number
+  q?: string
+  status?: string
+}
 
 async function unwrap<T>(promise: Promise<{ data: ApiResponse<T> }>): Promise<T> {
   const res = await promise
@@ -11,6 +18,13 @@ export function apiGet<T>(url: string): Promise<T> {
     console.debug('[api] GET', url)
   }
   return unwrap(httpClient.get<ApiResponse<T>>(url))
+}
+
+export function apiGetPaginated<T>(url: string, params?: ListQueryParams): Promise<Paginated<T>> {
+  if (import.meta.env.DEV) {
+    console.debug('[api] GET', url, params)
+  }
+  return httpClient.get<Paginated<T>>(url, { params }).then((res) => res.data)
 }
 
 export function apiPost<T>(url: string, body?: unknown): Promise<T> {
@@ -67,8 +81,8 @@ export type MutableResourceEndpoints = ResourceEndpoints &
   Required<Pick<ResourceEndpoints, 'trashed' | 'softDelete' | 'restore'>>
 
 export interface MutableResourceApi<T extends { id: string }> {
-  list: () => Promise<T[]>
-  listTrashed: () => Promise<T[]>
+  list: (params?: ListQueryParams) => Promise<Paginated<T>>
+  listTrashed: (params?: ListQueryParams) => Promise<Paginated<T>>
   getById: (id: string) => Promise<T>
   create: (body: CreateBody) => Promise<T>
   update: (id: string, body: UpdateBody) => Promise<T>
@@ -106,8 +120,8 @@ export function createMutableResourceApi<T extends { id: string }>(
   paths: MutableResourceEndpoints,
 ): MutableResourceApi<T> {
   return {
-    list: () => apiGet<T[]>(paths.list),
-    listTrashed: () => apiGet<T[]>(paths.trashed),
+    list: (params?: ListQueryParams) => apiGetPaginated<T>(paths.list, params),
+    listTrashed: (params?: ListQueryParams) => apiGetPaginated<T>(paths.trashed, params),
     getById: (id: string) => apiGet<T>(paths.byId(id)),
     create: (body: CreateBody) => apiPost<T>(paths.list, body),
     update: (id: string, body: UpdateBody) => apiPatch<T>(paths.byId(id), body),

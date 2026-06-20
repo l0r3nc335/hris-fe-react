@@ -1,10 +1,10 @@
-import { useState } from 'react'
-import type { UseQueryResult } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import type { EntityFormValues, FormFieldConfig } from '@/components/EntityFormDialog'
 import type { EntityListPageProps } from '@/components/EntityListPage'
 import type { ConfirmDialogProps } from '@/components/ConfirmDialog'
-import type { CreateBody, UpdateBody } from '@/services/api/client'
+import type { CreateBody, UpdateBody, ListQueryParams } from '@/services/api/client'
 import type { Permission } from '@/constants/permissions'
+import type { PaginatedListQueryResult } from '@/queries/factory'
 
 interface EntityListItem {
   id: string
@@ -12,16 +12,14 @@ interface EntityListItem {
   status: string
 }
 
-type ListQueryResult = Pick<UseQueryResult<EntityListItem[]>, 'data' | 'isLoading'>
-
 interface MutationHookResult<TVariables> {
   mutate: (variables: TVariables) => void
   isPending: boolean
 }
 
 export interface EntityCrudHooks {
-  useList: () => ListQueryResult
-  useTrashedList: () => ListQueryResult
+  useList: (params?: ListQueryParams) => PaginatedListQueryResult<EntityListItem>
+  useTrashedList: (params?: ListQueryParams) => PaginatedListQueryResult<EntityListItem>
   useCreate: () => MutationHookResult<CreateBody>
   useUpdate: () => MutationHookResult<{ id: string; body: UpdateBody }>
   useSoftDelete: () => MutationHookResult<string>
@@ -73,6 +71,10 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
     writePermission,
   } = config
   const [showDeleted, setShowDeleted] = useState(false)
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(20)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [formOpen, setFormOpen] = useState(false)
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create')
   const [editingItem, setEditingItem] = useState<EntityListItem | null>(null)
@@ -81,16 +83,32 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
     id: string
   } | null>(null)
 
-  const activeQuery = config.hooks.useList()
-  const trashedQuery = config.hooks.useTrashedList?.() ?? { data: undefined, isLoading: false }
+  const listParams: ListQueryParams = {
+    page,
+    limit,
+    q: searchQuery.trim() || undefined,
+    status: statusFilter,
+  }
+
+  const activeQuery = config.hooks.useList(listParams)
+  const trashedQuery = config.hooks.useTrashedList?.(listParams) ?? {
+    data: undefined,
+    meta: undefined,
+    isLoading: false,
+  }
   const createMutation = config.hooks.useCreate?.() ?? { mutate: () => undefined, isPending: false }
   const updateMutation = config.hooks.useUpdate?.() ?? { mutate: () => undefined, isPending: false }
   const softDeleteMutation = config.hooks.useSoftDelete?.() ?? { mutate: () => undefined, isPending: false }
   const restoreMutation = config.hooks.useRestore?.() ?? { mutate: () => undefined, isPending: false }
   const removeMutation = config.hooks.useRemove?.() ?? { mutate: () => undefined, isPending: false }
 
+  useEffect(() => {
+    setPage(1)
+  }, [searchQuery, statusFilter, showDeleted])
+
   const items = (showDeleted ? trashedQuery.data : activeQuery.data) ?? []
   const isLoading = showDeleted ? trashedQuery.isLoading : activeQuery.isLoading
+  const total = showDeleted ? trashedQuery.meta?.total ?? 0 : activeQuery.meta?.total ?? 0
 
   const openCreate = (): void => {
     setFormMode('create')
@@ -180,6 +198,18 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
       emptyTitle: showDeleted ? `No deleted ${entitySingular}s found` : emptyTitle,
       items,
       isLoading,
+      total,
+      page,
+      limit,
+      onPageChange: setPage,
+      onLimitChange: (nextLimit) => {
+        setLimit(nextLimit)
+        setPage(1)
+      },
+      searchValue: searchQuery,
+      onSearchChange: setSearchQuery,
+      statusFilter,
+      onStatusFilterChange: setStatusFilter,
       showDeleted,
       onShowDeletedChange: readOnly ? undefined : setShowDeleted,
       onCreate: readOnly ? undefined : openCreate,
@@ -206,7 +236,16 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
       mode: formMode,
       title: formMode === 'create' ? `Create ${entitySingular}` : `Edit ${entitySingular}`,
       initialValues: editingItem
-        ? { name: editingItem.name, status: editingItem.status }
+        ? {
+            name: editingItem.name,
+            status: editingItem.status,
+            ...Object.fromEntries(
+              formFields.map((field) => [
+                field.key,
+                String((editingItem as unknown as Record<string, unknown>)[field.key] ?? ''),
+              ]),
+            ),
+          }
         : undefined,
       onSubmit: handleFormSubmit,
       isPending:

@@ -1,7 +1,7 @@
 import { queryKeys } from '@/lib/queryKeys'
 import { recruitmentApi, listApplicants } from '@/services/api/recruitmentApi'
-import { createResourceQueryHooks } from '../factory'
-import { useQuery } from '@tanstack/react-query'
+import { createResourceQueryHooks, usePaginatedListQuery } from '../factory'
+import type { ListQueryParams } from '@/services/api/client'
 
 const hooks = createResourceQueryHooks(queryKeys.recruitment, recruitmentApi)
 
@@ -13,9 +13,10 @@ export const useSoftDeleteRecruitment = hooks.useSoftDelete
 export const useRestoreRecruitment = hooks.useRestore
 export const useRemoveRecruitment = hooks.useRemove
 
-export function useRecruitmentApplicantsList() {
-  return useQuery({
-    queryKey: queryKeys.recruitment.applicants(),
-    queryFn: listApplicants,
-  })
+export function useRecruitmentApplicantsList(params?: ListQueryParams) {
+  return usePaginatedListQuery(
+    [...queryKeys.recruitment.applicants(), params],
+    listApplicants,
+    params,
+  )
 }

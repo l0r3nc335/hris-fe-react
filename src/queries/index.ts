@@ -4,10 +4,12 @@ import { listReports } from '@/services/api/reportsApi'
 import { getDashboard } from '@/services/api/analyticsApi'
 import { listSystem } from '@/services/api/systemApi'
 import { queryKeys } from '@/lib/queryKeys'
-import { useListQuery } from './factory'
+import { useFlatListQuery, usePaginatedListQuery } from './factory'
+import type { ListQueryParams } from '@/services/api/client'
 
 export * from './users/queries'
 export * from './employees/queries'
+export * from './employeeDepartments/queries'
 export * from './departments/queries'
 export * from './positions/queries'
 export * from './attendance/queries'
@@ -31,12 +33,12 @@ export * from './benefits/queries'
 export * from './training/queries'
 export * from './reports/queries'
 
-export function useAuditList() {
-  return useListQuery(queryKeys.audit.list(), listAudit)
+export function useAuditList(params?: ListQueryParams) {
+  return usePaginatedListQuery(queryKeys.audit.list(), listAudit, params)
 }
 
 export function useReportsList() {
-  return useListQuery(queryKeys.reports.list(), listReports)
+  return useFlatListQuery(queryKeys.reports.list(), listReports)
 }
 
 export function useAnalyticsDashboard() {
@@ -47,5 +49,5 @@ export function useAnalyticsDashboard() {
 }
 
 export function useSystemList() {
-  return useListQuery(queryKeys.system.list(), listSystem)
+  return useFlatListQuery(queryKeys.system.list(), listSystem)
 }

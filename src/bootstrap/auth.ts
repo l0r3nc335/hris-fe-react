@@ -1,17 +1,34 @@
 import { fetchMe, refreshSession } from '@/slices/authSlice'
-import { setAuthHandlers, getAccessToken } from '@/services/httpClient'
+import { bootstrapCsrf, setAuthHandlers } from '@/services/httpClient'
+import { ROUTES } from '@/constants/routes'
 import type { AppStore } from '@/store'
+
+const PUBLIC_AUTH_PATHS = [
+  ROUTES.login,
+  ROUTES.register,
+  ROUTES.forgotPassword,
+  ROUTES.resetPassword,
+]
+
+function shouldRestoreSession(): boolean {
+  if (typeof window === 'undefined') return true
+  return !PUBLIC_AUTH_PATHS.some((path) => window.location.pathname.startsWith(path))
+}
 
 export function bootstrapAuth(store: AppStore): void {
   setAuthHandlers({
     refresh: async () => {
       const result = await store.dispatch(refreshSession())
-      if (refreshSession.fulfilled.match(result)) return result.payload
-      return null
+      return refreshSession.fulfilled.match(result)
     },
     unauthorized: () => {
-      void store.dispatch(refreshSession())
+      // Refresh already failed in the HTTP interceptor; local state is cleared by fetchMe.rejected.
     },
   })
-  if (getAccessToken()) void store.dispatch(fetchMe())
+  void (async () => {
+    await bootstrapCsrf()
+    if (shouldRestoreSession()) {
+      void store.dispatch(fetchMe())
+    }
+  })()
 }

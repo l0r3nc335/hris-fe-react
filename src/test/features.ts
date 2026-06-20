@@ -33,6 +33,16 @@ export const FEATURE_PAGES: FeaturePageDefinition[] = [
     load: () => import('@/modules/employees/pages/ListPage').then((m) => ({ default: m.EmployeesListPage })),
   },
   {
+    slug: 'employee-departments',
+    path: '/employee-departments',
+    title: 'Employee Department',
+    kind: 'crud',
+    load: () =>
+      import('@/modules/employeeDepartments/pages/ListPage').then((m) => ({
+        default: m.EmployeeDepartmentsListPage,
+      })),
+  },
+  {
     slug: 'departments',
     path: '/departments',
     title: 'Departments',

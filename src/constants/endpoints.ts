@@ -11,6 +11,7 @@ export const endpoints = {
     login: '/auth/login',
     logout: '/auth/logout',
     refresh: '/auth/refresh-token',
+    csrf: '/auth/csrf',
     register: '/auth/register',
     forgotPassword: '/auth/forgot-password',
     resetPassword: '/auth/reset-password',
@@ -42,6 +43,11 @@ export const endpoints = {
     resigned: '/employees/resigned',
     deactivate: (employeeId: string) => `/employees/${employeeId}/deactivate`,
     ...lifecycle('/employees'),
+  },
+  employeeDepartments: {
+    list: '/employee-departments',
+    byId: id('/employee-departments'),
+    ...lifecycle('/employee-departments'),
   },
   departments: {
     list: '/departments',

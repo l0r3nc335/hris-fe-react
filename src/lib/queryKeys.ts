@@ -9,6 +9,11 @@ export const queryKeys = {
     list: () => [...queryKeys.employees.all, 'list'] as const,
     trashed: () => [...queryKeys.employees.all, 'trashed'] as const,
   },
+  employeeDepartments: {
+    all: ['employeeDepartments'] as const,
+    list: () => [...queryKeys.employeeDepartments.all, 'list'] as const,
+    trashed: () => [...queryKeys.employeeDepartments.all, 'trashed'] as const,
+  },
   departments: {
     all: ['departments'] as const,
     list: () => [...queryKeys.departments.all, 'list'] as const,

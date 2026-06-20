@@ -1,13 +1,6 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import * as authApi from '@/services/api/authApi'
-import {
-  clearAuthStorage,
-  setAccessToken,
-  setRefreshToken,
-  setTenantId,
-  getAccessToken,
-  getRefreshToken,
-} from '@/services/httpClient'
+import { clearSession, setTenantId } from '@/services/httpClient'
 import type { User } from '@/types'
 import type { RootState } from '@/store'
 import { normalizeApiError } from '@/services/errors'
@@ -21,7 +14,7 @@ export interface AuthState {
 
 const initialState: AuthState = {
   user: null,
-  isAuthenticated: Boolean(getAccessToken()),
+  isAuthenticated: false,
   status: 'idle',
   error: null,
 }
@@ -47,16 +40,10 @@ export const fetchMe = createAsyncThunk('auth/fetchMe', async (_, { rejectWithVa
 
 export const refreshSession = createAsyncThunk(
   'auth/refresh',
-  async (_, { getState, rejectWithValue }) => {
-    const token = getRefreshToken()
-    if (!token) return rejectWithValue('No refresh token')
+  async (_, { rejectWithValue }) => {
     try {
-      const tokens = await authApi.refreshToken(token)
-      setAccessToken(tokens.accessToken)
-      setRefreshToken(tokens.refreshToken)
-      const state = getState() as RootState
-      if (state.auth.user?.tenantId) setTenantId(state.auth.user.tenantId)
-      return tokens.accessToken
+      await authApi.refreshSession()
+      return true
     } catch (e) {
       return rejectWithValue(normalizeApiError(e).message)
     }
@@ -69,7 +56,7 @@ export const logout = createAsyncThunk('auth/logout', async () => {
   } catch {
     // Server logout is best-effort; always sign out locally below.
   } finally {
-    clearAuthStorage()
+    clearSession()
     setTenantId(null)
   }
 })
@@ -92,23 +79,27 @@ const authSlice = createSlice({
         state.status = 'succeeded'
         state.user = action.payload.user
         state.isAuthenticated = true
-        setAccessToken(action.payload.tokens.accessToken)
-        setRefreshToken(action.payload.tokens.refreshToken)
         setTenantId(action.payload.user.tenantId)
       })
       .addCase(login.rejected, (state, action) => {
         state.status = 'failed'
         state.error = (action.payload as string) ?? 'Login failed'
       })
+      .addCase(fetchMe.pending, (state) => {
+        state.status = 'loading'
+      })
       .addCase(fetchMe.fulfilled, (state, action) => {
+        state.status = 'succeeded'
         state.user = action.payload
         state.isAuthenticated = true
         setTenantId(action.payload.tenantId)
       })
       .addCase(fetchMe.rejected, (state) => {
+        state.status = 'failed'
         state.isAuthenticated = false
         state.user = null
-        clearAuthStorage()
+        clearSession()
+        setTenantId(null)
       })
       .addCase(logout.fulfilled, (state) => {
         state.user = null
@@ -123,3 +114,4 @@ export const authReducer = authSlice.reducer
 export const selectAuth = (state: RootState): AuthState => state.auth
 export const selectUser = (state: RootState): User | null => state.auth.user
 export const selectIsAuthenticated = (state: RootState): boolean => state.auth.isAuthenticated
+export const selectAuthStatus = (state: RootState): AuthState['status'] => state.auth.status

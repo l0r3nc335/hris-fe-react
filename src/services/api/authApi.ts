@@ -1,7 +1,7 @@
-import { httpClient, getRefreshToken } from '@/services/httpClient'
+import { ensureCsrfReady, httpClient } from '@/services/httpClient'
 import { endpoints } from '@/constants/endpoints'
 import type { ApiResponse } from '@/types/api'
-import type { AuthTokens, User } from '@/types'
+import type { User } from '@/types'
 
 export interface LoginPayload {
   email: string
@@ -10,27 +10,22 @@ export interface LoginPayload {
 
 export interface LoginResult {
   user: User
-  tokens: AuthTokens
 }
 
 export async function login(payload: LoginPayload): Promise<LoginResult> {
+  await ensureCsrfReady()
   const res = await httpClient.post<ApiResponse<LoginResult>>(endpoints.auth.login, payload)
   return res.data.data
 }
 
 export async function logout(): Promise<void> {
-  const refreshToken = getRefreshToken()
-  await httpClient.post(
-    endpoints.auth.logout,
-    refreshToken ? { refreshToken } : undefined,
-  )
+  await ensureCsrfReady()
+  await httpClient.post(endpoints.auth.logout)
 }
 
-export async function refreshToken(token: string): Promise<AuthTokens> {
-  const res = await httpClient.post<ApiResponse<AuthTokens>>(endpoints.auth.refresh, {
-    refreshToken: token,
-  })
-  return res.data.data
+export async function refreshSession(): Promise<void> {
+  await ensureCsrfReady()
+  await httpClient.post(endpoints.auth.refresh)
 }
 
 export async function fetchMe(): Promise<User> {
@@ -44,11 +39,13 @@ export async function register(payload: {
   firstName: string
   lastName: string
 }): Promise<User> {
+  await ensureCsrfReady()
   const res = await httpClient.post<ApiResponse<User>>(endpoints.auth.register, payload)
   return res.data.data
 }
 
 export async function forgotPassword(email: string): Promise<void> {
+  await ensureCsrfReady()
   await httpClient.post(endpoints.auth.forgotPassword, { email })
 }
 
@@ -56,5 +53,7 @@ export async function resetPassword(payload: {
   token: string
   password: string
 }): Promise<void> {
+  await ensureCsrfReady()
   await httpClient.post(endpoints.auth.resetPassword, payload)
 }
+

@@ -1,0 +1,373 @@
+---
+description: Complete HRIS authentication walkthrough — HttpOnly cookie auth, JWT access tokens, opaque refresh tokens, CSRF, bcrypt, RBAC, multi-tenant isolation, BE+FE implementation and testing
+globs: src/**/*auth*,src/slices/authSlice.ts,src/services/httpClient.ts,src/bootstrap/**,src/routes/**,src/hooks/usePermission.ts
+alwaysApply: false
+---
+
+# Authentication in HRIS — Full Walkthrough
+
+This app uses **HttpOnly cookie authentication**: short-lived JWT access tokens and opaque refresh tokens are set exclusively via `Set-Cookie` headers. The frontend never reads or stores access/refresh tokens in JavaScript-accessible storage. Sessions are restored via `GET /auth/me` with cookies sent automatically (on non-public routes).
+
+**Demo credentials** (after `npm run prisma:seed` in `BE/`): `admin@hris.com` / `password`
+
+---
+
+## Authentication method (summary)
+
+| Layer | Method |
+|--------|--------|
+| **Credentials** | Email + password |
+| **Password storage** | `bcrypt` hash (cost 10) in PostgreSQL |
+| **Access token** | Short-lived **JWT** in HttpOnly cookie `hris_access_token` |
+| **Refresh token** | Random 96-char hex string, **SHA-256 hashed** in DB, HttpOnly cookie `hris_refresh_token` |
+| **CSRF** | Double-submit: readable cookie `hris_csrf` (`Path=/`) + `X-CSRF-Token` header on mutating requests; FE also stores token in memory from response body |
+| **Session restore** | FE always calls `GET /auth/csrf` on load; `GET /auth/me` only when **not** on a public auth page |
+| **Authorization** | RBAC: roles → permissions, enforced on BE and FE |
+| **Multi-tenant** | `tenantId` in JWT + `X-Tenant-Id` header on requests |
+| **Token storage (FE)** | No access/refresh tokens in JS; `tenantId` and CSRF token held in memory for headers |
+
+---
+
+## High-level architecture
+
+```mermaid
+sequenceDiagram
+  participant User
+  participant FE as React_SPA
+  participant Vite as Vite_Proxy
+  participant BE as NestJS_API
+  participant DB as PostgreSQL
+
+  User->>FE: Submit login form
+  FE->>FE: ensureCsrfReady
+  FE->>Vite: POST /api/v1/auth/login
+  Vite->>BE: forward with credentials
+  BE->>DB: find user, bcrypt.compare
+  BE->>DB: create RefreshToken row
+  BE-->>FE: Set-Cookie access + refresh + csrf
+  BE-->>FE: JSON user only
+  FE-->>User: navigate to dashboard
+
+  Note over FE,BE: Subsequent API calls
+  FE->>Vite: GET /api/v1/employees
+  Note over FE: cookies sent automatically
+  Vite->>BE: forward cookies
+  BE->>BE: JwtStrategy reads access cookie
+  BE->>BE: TenantGuard + PermissionsGuard
+  BE-->>FE: protected data
+
+  Note over FE,BE: Access token expired 401
+  FE->>BE: POST /auth/refresh-token
+  BE->>DB: revoke old refresh, issue new pair
+  BE-->>FE: Set-Cookie new tokens
+  FE->>BE: retry original request
+```
+
+---
+
+# Part 1 — Backend (NestJS)
+
+## Step 1 — Dependencies
+
+From `BE/package.json`:
+
+- `@nestjs/jwt`, `@nestjs/passport`, `passport`, `passport-jwt` — JWT validation from cookie
+- `cookie-parser` — parse incoming cookies
+- `bcrypt` — password hashing
+- `@prisma/client` + PostgreSQL — users and refresh tokens
+- `ioredis` — session revocation marker on logout
+
+## Step 2 — Environment
+
+`BE/.env.example`:
+
+```env
+JWT_ACCESS_SECRET=change-me-access-secret-min-32-chars
+JWT_ACCESS_EXPIRES=15m
+JWT_REFRESH_EXPIRES=7d
+CORS_ORIGIN=http://localhost:5173
+COOKIE_SECURE=false
+COOKIE_SAME_SITE=lax
+DATABASE_URL=postgresql://...
+```
+
+`COOKIE_SECURE=true` in production (requires HTTPS).
+
+## Step 3 — Cookie service
+
+`BE/src/modules/auth/auth-cookies.service.ts` centralizes cookie names and options:
+
+| Cookie | HttpOnly | Path | Purpose |
+|--------|----------|------|---------|
+| `hris_access_token` | yes | `/api/v1` | Short-lived JWT |
+| `hris_refresh_token` | yes | `/api/v1/auth` | Opaque refresh (narrow path) |
+| `hris_csrf` | no | `/` | CSRF double-submit token (JS-readable) |
+
+Methods: `setAuthCookies`, `clearAuthCookies`, `readAccessToken`, `readRefreshToken`, `setCsrfCookie`, `clearLegacyCsrfCookies`, `validateCsrf`.
+
+**Legacy CSRF cleanup:** `setCsrfCookie` calls `clearLegacyCsrfCookies` to expire any stale `hris_csrf` cookie at the old path `/api/v1`. Without this, the browser can send the legacy cookie on `/api/v1/*` requests while the FE header carries a newer token → **403 Invalid CSRF token**.
+
+## Step 4 — JWT strategy (cookie extraction)
+
+`BE/src/modules/auth/strategies/jwt.strategy.ts` reads the access token from `req.cookies.hris_access_token` — not from `Authorization: Bearer`.
+
+## Step 5 — CSRF guard
+
+`BE/src/common/guards/csrf.guard.ts` is registered globally after `JwtAuthGuard`. All `POST`/`PUT`/`PATCH`/`DELETE` requests must include `X-CSRF-Token` matching the `hris_csrf` cookie.
+
+`GET /auth/csrf` (`@Public`) issues the CSRF cookie and returns the token in the JSON body.
+
+## Step 6 — Auth endpoints
+
+| Endpoint | Behavior |
+|----------|----------|
+| `GET /auth/csrf` | Clears legacy CSRF path, sets `hris_csrf` cookie, returns `{ ok: true, csrfToken }` |
+| `POST /auth/login` | Validates credentials, `Set-Cookie` auth + csrf, returns `{ user }` only |
+| `POST /auth/refresh-token` | Reads refresh from cookie, rotates tokens via `Set-Cookie`, returns `{ ok: true }` |
+| `POST /auth/logout` | `@Public`; revokes refresh server-side, clears all auth cookies |
+| `GET /auth/me` | Returns current user from access cookie JWT |
+
+Access and refresh tokens are **never** returned in JSON response bodies. The CSRF token **is** returned in JSON (must match the cookie — not a standalone secret).
+
+## Step 7 — Token lifecycle (server-side)
+
+- **Access token**: JWT signed with `JWT_ACCESS_SECRET`, default `15m` expiry
+- **Refresh token**: `randomBytes(48).toString('hex')`, SHA-256 hashed in `RefreshToken` table, `7d` expiry
+- **Rotation**: old refresh revoked on each refresh call
+- **Logout**: refresh revoked + Redis `session:revoked:{userId}` marker
+
+## Step 8 — Bootstrap (`main.ts`)
+
+```typescript
+app.use(cookieParser());
+app.enableCors({
+  origin: corsOrigins,
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'X-Tenant-Id', 'X-CSRF-Token'],
+});
+// Swagger: .addCookieAuth('hris_access_token')
+```
+
+---
+
+# Part 2 — Frontend (React)
+
+## Step 1 — Environment + Vite dev proxy (required for browser cookies)
+
+`FE/vite.config.ts` proxies `/api` → `http://localhost:3000` so the browser treats API calls as same-origin. Cookies set by the API are stored and sent automatically.
+
+```typescript
+server: {
+  proxy: {
+    '/api': { target: 'http://localhost:3000', changeOrigin: true },
+  },
+},
+```
+
+**Browser dev** — `FE/.env`:
+
+```env
+# Leave empty so requests use the Vite proxy (same-origin cookies + CSRF)
+VITE_API_BASE_URL=
+```
+
+- Empty `VITE_API_BASE_URL` → `httpClient` base URL is `/api/v1` (relative, proxied through `localhost:5173`).
+- **Do not** set `VITE_API_BASE_URL=http://localhost:3000` for browser dev — cross-origin requests break CSRF (cookie on `:3000`, JS reads cookies on `:5173`).
+
+**Integration tests** — `vitest.integration.config.ts` overrides `VITE_API_BASE_URL=http://localhost:3000` and uses the Node cookie-jar fallback in `httpClient` (not the Vite proxy path).
+
+## Step 2 — HTTP client (`httpClient.ts`)
+
+- `withCredentials: true` on axios instance
+- No `Authorization` header, no `sessionStorage` / `localStorage` for access/refresh tokens
+- `bootstrapCsrf()` / `ensureCsrfReady()` → `GET /auth/csrf`, store `csrfToken` from response body in memory via `setCsrfToken`
+- `readCsrfToken()` → `document.cookie` first, then in-memory fallback; Node tests use `nodeCookieJar`
+- Request interceptor: `X-CSRF-Token` on POST/PUT/PATCH/DELETE; `X-Tenant-Id` from in-memory state
+- Response interceptor (browser): syncs CSRF memory from `document.cookie` after successful responses (handles post-login CSRF rotation)
+- `clearSession()` clears in-memory `tenantId` and CSRF token
+- 401 interceptor: calls `refreshSession` handler and retries original request, **except** for auth paths in `NO_REFRESH_RETRY_PATHS` (`/auth/refresh-token`, `/auth/login`, `/auth/csrf`, `/auth/register`, `/auth/forgot-password`, `/auth/reset-password`, `/auth/logout`)
+- `setTenantId` / `getTenantId` — in-memory only (from Redux `user`)
+
+## Step 3 — Auth API (`authApi.ts`)
+
+All mutating auth functions call `ensureCsrfReady()` before POST to refresh CSRF and clear legacy cookies server-side.
+
+| Function | Endpoint | Notes |
+|----------|----------|-------|
+| `login` | `POST /auth/login` | `ensureCsrfReady()` then POST; returns `{ user }` only |
+| `logout` | `POST /auth/logout` | `ensureCsrfReady()` then POST; clears cookies server-side |
+| `refreshSession` | `POST /auth/refresh-token` | `ensureCsrfReady()` then POST; no body |
+| `fetchMe` | `GET /auth/me` | Restores session; no CSRF required (GET) |
+| `register` | `POST /auth/register` | `ensureCsrfReady()` then POST |
+| `forgotPassword` | `POST /auth/forgot-password` | `ensureCsrfReady()` then POST |
+| `resetPassword` | `POST /auth/reset-password` | `ensureCsrfReady()` then POST |
+
+## Step 4 — Redux auth slice (`authSlice.ts`)
+
+- `initialState.isAuthenticated = false`
+- `login.fulfilled`: sets `user`, `isAuthenticated`, calls `setTenantId`
+- `fetchMe.pending`: `status = 'loading'` (used by `AuthGate` loader)
+- `fetchMe.fulfilled`: sets user from cookie session
+- `fetchMe.rejected`: clears local session state via `clearSession()`
+- `refreshSession`: calls API only; cookies updated by `Set-Cookie`
+
+## Step 5 — Bootstrap (`bootstrap/auth.ts`)
+
+```typescript
+setAuthHandlers({
+  refresh: async () => refreshSession.fulfilled.match(await store.dispatch(refreshSession())),
+  unauthorized: () => {
+    // No-op — refresh already failed; fetchMe.rejected clears local state
+  },
+})
+await bootstrapCsrf()
+if (shouldRestoreSession()) {
+  void store.dispatch(fetchMe())
+}
+```
+
+`shouldRestoreSession()` returns `false` on public auth pages (`/auth/login`, `/auth/register`, `/auth/forgot-password`, `/auth/reset-password`) to avoid unnecessary `GET /auth/me` 401s in the console.
+
+## Step 6 — AuthGate
+
+Shows `PageLoader` when `status === 'loading'` or `isAuthenticated && user === null` during session restore.
+
+## Step 7 — Protected routes
+
+`RequireAuth` checks `isAuthenticated` from Redux. Unauthenticated users redirect to `/auth/login`.
+
+---
+
+# Part 3 — End-to-end flows
+
+## Login
+
+1. App boot → `bootstrapCsrf()` (CSRF cookie + memory token)
+2. User submits login form → `login()` calls `ensureCsrfReady()` again (refreshes CSRF, clears legacy cookie)
+3. `POST /auth/login` with matching `X-CSRF-Token` header + `hris_csrf` cookie + credentials
+4. BE sets HttpOnly auth cookies, rotates CSRF, returns `{ user }`
+5. FE syncs CSRF memory from cookie; Redux stores user; `setTenantId(user.tenantId)`
+6. Navigate to dashboard
+
+## Session restore (page refresh)
+
+1. App boots → `bootstrapCsrf()`
+2. If not on a public auth page → `fetchMe()`
+3. Browser sends `hris_access_token` cookie automatically
+4. `GET /auth/me` succeeds → Redux populated
+5. If access expired: 401 → refresh (unless skipped path) → retry `fetchMe`
+6. If no session: 401 → refresh fails → `fetchMe.rejected` clears local state
+
+## Logout
+
+1. `ensureCsrfReady()` then `POST /auth/logout` with cookies + CSRF header
+2. BE revokes refresh token, clears cookies (including legacy CSRF paths)
+3. Redux clears user state; `clearSession()` resets in-memory tenant and CSRF
+
+---
+
+# Part 4 — Testing
+
+## Backend e2e (`BE/test/app.e2e-spec.ts`)
+
+Uses supertest with manual cookie jar:
+
+1. `GET /auth/csrf` → capture `hris_csrf` from `Set-Cookie` (or `csrfToken` from body)
+2. `POST /auth/login` with `Cookie` + `X-CSRF-Token`
+3. Assert `tokens` absent from response body; assert `Set-Cookie` present
+4. Protected routes use cookie header (no Bearer)
+
+Run: `cd BE && npm run test:e2e`
+
+## Frontend unit tests
+
+- `bootstrap/auth.test.ts`: mocks `bootstrapCsrf`, verifies auth handlers registered and `fetchMe` dispatched
+- `AuthGate.test.tsx`: loader shown when `status === 'loading'`
+
+Run: `cd FE && npm run test -- src/bootstrap/auth.test.ts`
+
+## Frontend integration tests
+
+Uses `VITE_API_BASE_URL=http://localhost:3000` (direct API, not Vite proxy) with Node cookie-jar fallback in `httpClient`.
+
+`FE/src/test/integration/helpers.ts` — `seedAuthFromApi()`:
+
+1. `bootstrapCsrf()` via `httpClient`
+2. `POST /auth/login` via `httpClient` (Node cookie jar)
+3. `setTenantId(user.tenantId)`
+
+`LoginPage.integration.test.tsx` submits the login form against the live API.
+
+Run: `cd FE && npx vitest run --config vitest.integration.config.ts`
+
+## Cypress
+
+UI login at `http://localhost:5173` — real `Set-Cookie` flow through Vite proxy. Requires both BE and FE dev servers running.
+
+Run: `cd FE && npm run test:e2e`
+
+## Manual proxy smoke test
+
+With BE on `:3000` and FE on `:5173`:
+
+1. `GET http://localhost:5173/api/v1/auth/csrf` → 200 + `csrfToken`
+2. `POST http://localhost:5173/api/v1/auth/login` with `X-CSRF-Token` + cookie → 201
+3. `GET http://localhost:5173/api/v1/auth/me` with session cookies → 200
+
+---
+
+# Part 5 — Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| **502 Bad Gateway** on `/api/v1/auth/csrf` | FE dev server down or BE not running on `:3000` | Start both: `BE npm run start:dev`, `FE npm run dev` |
+| **Network Error** on login | Same as 502 — proxy target unreachable | Verify `http://localhost:3000/api/v1/health` returns 200 |
+| **403 Invalid CSRF token** | `VITE_API_BASE_URL=http://localhost:3000` in browser `.env`, or stale legacy CSRF cookie at `/api/v1` | Set `VITE_API_BASE_URL=` (empty); hard refresh or clear site cookies for `localhost:5173` |
+| **401 in console** on protected pages when logged out | Expected — `fetchMe` or refresh attempted without session | Normal; login with seeded credentials |
+| **Invalid email or password** | Wrong credentials or DB not seeded | Run `cd BE && npm run prisma:seed`; use `admin@hris.com` / `password` |
+
+**Both servers required for browser dev:**
+
+```bash
+# Terminal 1
+cd BE && npm run start:dev
+
+# Terminal 2
+cd FE && npm run dev
+```
+
+Open `http://localhost:5173/auth/login` (not `:3000`).
+
+---
+
+# File reference
+
+| File | Role |
+|------|------|
+| `BE/src/modules/auth/auth-cookies.service.ts` | Cookie set/read/clear/CSRF + legacy path cleanup |
+| `BE/src/modules/auth/auth.controller.ts` | Login, refresh, logout, csrf endpoints |
+| `BE/src/modules/auth/auth.service.ts` | Credentials, token issuance, revocation |
+| `BE/src/modules/auth/strategies/jwt.strategy.ts` | JWT from access cookie |
+| `BE/src/common/guards/csrf.guard.ts` | CSRF validation |
+| `BE/src/main.ts` | cookie-parser, CORS credentials, Swagger cookie auth |
+| `FE/vite.config.ts` | Dev proxy for same-origin cookies |
+| `FE/.env` | `VITE_API_BASE_URL=` for browser dev |
+| `FE/vitest.integration.config.ts` | `VITE_API_BASE_URL=http://localhost:3000` for integration tests |
+| `FE/src/services/httpClient.ts` | withCredentials, CSRF header/memory, 401 refresh, Node cookie jar |
+| `FE/src/services/api/authApi.ts` | Auth API calls with `ensureCsrfReady()` |
+| `FE/src/slices/authSlice.ts` | Session state (user only, no tokens) |
+| `FE/src/bootstrap/auth.ts` | CSRF bootstrap + conditional session restore |
+| `FE/src/modules/auth/AuthGate.tsx` | Loading gate during restore |
+| `FE/src/test/integration/helpers.ts` | `seedAuthFromApi()` for integration tests |
+
+---
+
+# Security properties
+
+1. **HttpOnly cookies** — JavaScript cannot read access or refresh tokens (XSS cannot exfiltrate credentials via `sessionStorage`)
+2. **CSRF protection** — mutating requests require matching `X-CSRF-Token` header and `hris_csrf` cookie; cookie at `Path=/` is JS-readable by design (double-submit pattern)
+3. **CSRF in JSON** — `GET /auth/csrf` returns `csrfToken` for FE memory fallback; must match cookie value (not a standalone auth secret)
+4. **Short-lived access JWT** — limits window if cookie is compromised
+5. **Refresh rotation** — old refresh tokens revoked on use
+6. **Server-side enforcement** — RBAC + tenant guards on every protected route
+7. **Narrow refresh cookie path** — `hris_refresh_token` only sent to `/api/v1/auth/*`

@@ -1,14 +1,47 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
 import { API_VERSION } from '@/constants/api'
+import { endpoints } from '@/constants/endpoints'
 
-const ACCESS_TOKEN_KEY = 'hris_access_token'
-const REFRESH_TOKEN_KEY = 'hris_refresh_token'
-const TENANT_ID_KEY = 'hris_tenant_id'
+export const CSRF_COOKIE = 'hris_csrf'
 
-let accessToken: string | null = sessionStorage.getItem(ACCESS_TOKEN_KEY)
-let tenantId: string | null = sessionStorage.getItem(TENANT_ID_KEY)
+let tenantId: string | null = null
+let csrfTokenMemory: string | null = null
+const nodeCookieJar: Record<string, string> = {}
 
-type RefreshHandler = () => Promise<string | null>
+function parseSetCookie(
+  setCookie: string[] | string | undefined,
+): Record<string, string> {
+  const headers = Array.isArray(setCookie)
+    ? setCookie
+    : setCookie
+      ? [setCookie]
+      : []
+  const jar: Record<string, string> = {}
+  for (const header of headers) {
+    const [pair] = header.split(';')
+    if (!pair) continue
+    const eq = pair.indexOf('=')
+    if (eq === -1) continue
+    const name = pair.slice(0, eq).trim()
+    const value = pair.slice(eq + 1).trim()
+    jar[name] = value
+  }
+  return jar
+}
+
+function mergeNodeCookies(setCookie: string[] | string | undefined): void {
+  const parsed = parseSetCookie(setCookie)
+  Object.assign(nodeCookieJar, parsed)
+  if (parsed[CSRF_COOKIE]) csrfTokenMemory = parsed[CSRF_COOKIE]
+}
+
+function nodeCookieHeader(): string {
+  return Object.entries(nodeCookieJar)
+    .map(([name, value]) => `${name}=${value}`)
+    .join('; ')
+}
+
+type RefreshHandler = () => Promise<boolean>
 let onRefresh: RefreshHandler | null = null
 let onUnauthorized: (() => void) | null = null
 
@@ -20,47 +53,74 @@ export function setAuthHandlers(handlers: {
   onUnauthorized = handlers.unauthorized
 }
 
-export function setAccessToken(token: string | null): void {
-  accessToken = token
-  if (token) sessionStorage.setItem(ACCESS_TOKEN_KEY, token)
-  else sessionStorage.removeItem(ACCESS_TOKEN_KEY)
-}
-
-export function setRefreshToken(token: string | null): void {
-  if (token) sessionStorage.setItem(REFRESH_TOKEN_KEY, token)
-  else sessionStorage.removeItem(REFRESH_TOKEN_KEY)
-}
-
-export function getRefreshToken(): string | null {
-  return sessionStorage.getItem(REFRESH_TOKEN_KEY)
-}
-
 export function setTenantId(id: string | null): void {
   tenantId = id
-  if (id) sessionStorage.setItem(TENANT_ID_KEY, id)
-  else sessionStorage.removeItem(TENANT_ID_KEY)
 }
 
-export function getAccessToken(): string | null {
-  return accessToken
+export function getTenantId(): string | null {
+  return tenantId
 }
 
-export function clearAuthStorage(): void {
-  accessToken = null
-  sessionStorage.removeItem(ACCESS_TOKEN_KEY)
-  sessionStorage.removeItem(REFRESH_TOKEN_KEY)
+export function clearSession(): void {
+  tenantId = null
+  csrfTokenMemory = null
 }
 
-const baseURL = `${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'}/api/${API_VERSION}`
+function readCsrfFromDocumentCookie(): string | null {
+  const match = document.cookie
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${CSRF_COOKIE}=`))
+  if (!match) return null
+  return decodeURIComponent(match.slice(CSRF_COOKIE.length + 1))
+}
+
+export function readCsrfToken(): string | null {
+  if (typeof document !== 'undefined') {
+    const fromCookie = readCsrfFromDocumentCookie()
+    if (fromCookie) return fromCookie
+    return csrfTokenMemory
+  }
+  return nodeCookieJar[CSRF_COOKIE] ?? csrfTokenMemory
+}
+
+export function setCsrfToken(token: string | null): void {
+  csrfTokenMemory = token
+}
+
+const NO_REFRESH_RETRY_PATHS = [
+  endpoints.auth.refresh,
+  endpoints.auth.login,
+  endpoints.auth.csrf,
+  endpoints.auth.register,
+  endpoints.auth.forgotPassword,
+  endpoints.auth.resetPassword,
+  endpoints.auth.logout,
+]
+
+function shouldSkipRefreshRetry(config: InternalAxiosRequestConfig): boolean {
+  const url = config.url ?? ''
+  return NO_REFRESH_RETRY_PATHS.some((path) => url.includes(path))
+}
+
+const baseURL = `${import.meta.env.VITE_API_BASE_URL ?? ''}/api/${API_VERSION}`
 
 export const httpClient: AxiosInstance = axios.create({
   baseURL,
+  withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 })
 
 httpClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  if (accessToken) {
-    config.headers.Authorization = `Bearer ${accessToken}`
+  if (typeof document === 'undefined' && Object.keys(nodeCookieJar).length > 0) {
+    config.headers.Cookie = nodeCookieHeader()
+  }
+  const method = config.method?.toUpperCase()
+  if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    const csrfToken = readCsrfToken()
+    if (csrfToken) {
+      config.headers['X-CSRF-Token'] = csrfToken
+    }
   }
   if (tenantId) {
     config.headers['X-Tenant-Id'] = tenantId
@@ -69,36 +129,47 @@ httpClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 })
 
 let isRefreshing = false
-let refreshQueue: Array<(token: string | null) => void> = []
+let refreshQueue: Array<(success: boolean) => void> = []
 
 httpClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (typeof document === 'undefined') {
+      mergeNodeCookies(response.headers['set-cookie'])
+    } else {
+      const fromCookie = readCsrfFromDocumentCookie()
+      if (fromCookie) setCsrfToken(fromCookie)
+    }
+    return response
+  },
   async (error) => {
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
-    if (error.response?.status === 401 && !original._retry && onRefresh) {
+    if (
+      error.response?.status === 401 &&
+      !original._retry &&
+      onRefresh &&
+      !shouldSkipRefreshRetry(original)
+    ) {
       original._retry = true
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
-          refreshQueue.push((token) => {
-            if (!token) {
+          refreshQueue.push((success) => {
+            if (!success) {
               reject(error)
               return
             }
-            original.headers.Authorization = `Bearer ${token}`
             resolve(httpClient(original))
           })
         })
       }
       isRefreshing = true
       try {
-        const newToken = await onRefresh()
-        refreshQueue.forEach((cb) => cb(newToken))
+        const success = await onRefresh()
+        refreshQueue.forEach((cb) => cb(success))
         refreshQueue = []
-        if (!newToken) {
+        if (!success) {
           onUnauthorized?.()
           return Promise.reject(error)
         }
-        original.headers.Authorization = `Bearer ${newToken}`
         return httpClient(original)
       } finally {
         isRefreshing = false
@@ -108,7 +179,22 @@ httpClient.interceptors.response.use(
   },
 )
 
-export async function request<T>(url: string, method: 'get' | 'post' | 'put' | 'patch' | 'delete' = 'get', body?: unknown): Promise<T> {
+export async function bootstrapCsrf(): Promise<void> {
+  const res = await httpClient.get<{ data: { csrfToken?: string } }>(endpoints.auth.csrf)
+  const token = res.data.data?.csrfToken
+  if (token) setCsrfToken(token)
+}
+
+/** Refresh CSRF before mutating auth calls (clears legacy cookie paths server-side). */
+export async function ensureCsrfReady(): Promise<void> {
+  await bootstrapCsrf()
+}
+
+export async function request<T>(
+  url: string,
+  method: 'get' | 'post' | 'put' | 'patch' | 'delete' = 'get',
+  body?: unknown,
+): Promise<T> {
   const res = await httpClient.request<{ data: T }>({ url, method, data: body })
   return res.data.data
 }

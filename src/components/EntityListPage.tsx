@@ -6,6 +6,7 @@ import { StatusBadge } from '@/components/StatusBadge'
 import { RequirePermission } from '@/components/RequirePermission'
 import { PageShell } from '@/components/layout/PageShell'
 import { DataTableToolbar } from '@/components/layout/DataTableToolbar'
+import { TablePagination } from '@/components/TablePagination'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button, Dropdown, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui'
 import type { DropdownItem } from '@/ui/Dropdown'
@@ -15,6 +16,11 @@ interface EntityListItem {
   id: string
   name: string
   status: string
+}
+
+export interface EntityListExtraColumn {
+  header: string
+  cell: (item: EntityListItem) => React.ReactNode
 }
 
 export interface EntityListPageProps {
@@ -34,10 +40,20 @@ export interface EntityListPageProps {
   isTrashedView?: boolean
   extraToolbar?: React.ReactNode
   extraRowActions?: (item: EntityListItem) => React.ReactNode
-  searchKeys?: (keyof EntityListItem)[]
+  extraColumns?: EntityListExtraColumn[]
+  searchKeys?: string[]
   embedded?: boolean
   createPermission?: Permission
   writePermission?: Permission
+  total?: number
+  page?: number
+  limit?: number
+  onPageChange?: (page: number) => void
+  onLimitChange?: (limit: number) => void
+  searchValue?: string
+  onSearchChange?: (value: string) => void
+  statusFilter?: string
+  onStatusFilterChange?: (value: string) => void
 }
 
 function RowActionsDropdown({
@@ -109,26 +125,61 @@ export function EntityListPage({
   isTrashedView = false,
   extraToolbar,
   extraRowActions,
+  extraColumns = [],
   searchKeys = ['name', 'status'],
   embedded = false,
   createPermission,
   writePermission,
+  total,
+  page = 1,
+  limit = 20,
+  onPageChange,
+  onLimitChange,
+  searchValue,
+  onSearchChange,
+  statusFilter,
+  onStatusFilterChange,
 }: EntityListPageProps): React.JSX.Element {
   const trashedView = isTrashedView || showDeleted
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  const serverSide = total !== undefined
+  const [localSearchQuery, setLocalSearchQuery] = useState('')
+  const [localStatusFilter, setLocalStatusFilter] = useState('all')
+
+  const searchQuery = serverSide ? (searchValue ?? '') : localSearchQuery
+  const activeStatusFilter = serverSide ? (statusFilter ?? 'all') : localStatusFilter
+
+  const handleSearchChange = (value: string): void => {
+    if (serverSide) {
+      onSearchChange?.(value)
+      return
+    }
+    setLocalSearchQuery(value)
+  }
+
+  const handleStatusFilterChange = (value: string): void => {
+    if (serverSide) {
+      onStatusFilterChange?.(value)
+      return
+    }
+    setLocalStatusFilter(value)
+  }
 
   const filteredItems = useMemo(() => {
+    if (serverSide) return items
     let result = items
-    if (statusFilter !== 'all') {
-      result = result.filter((item) => item.status.toLowerCase() === statusFilter)
+    if (activeStatusFilter !== 'all') {
+      result = result.filter((item) => item.status.toLowerCase() === activeStatusFilter)
     }
     const q = searchQuery.trim().toLowerCase()
     if (!q) return result
     return result.filter((item) =>
-      searchKeys.some((key) => String(item[key]).toLowerCase().includes(q)),
+      searchKeys.some((key) =>
+        String((item as unknown as Record<string, unknown>)[key] ?? '')
+          .toLowerCase()
+          .includes(q),
+      ),
     )
-  }, [items, searchKeys, searchQuery, statusFilter])
+  }, [items, searchKeys, searchQuery, activeStatusFilter, serverSide])
 
   const addButton =
     onCreate ? (
@@ -149,11 +200,11 @@ export function EntityListPage({
       <CardHeader className="space-y-4 pb-0">
         <DataTableToolbar
           searchValue={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchChange={handleSearchChange}
           showDeleted={showDeleted}
           onShowDeletedChange={onShowDeletedChange}
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
+          statusFilter={activeStatusFilter}
+          onStatusFilterChange={handleStatusFilterChange}
           extra={extraToolbar}
           primaryAction={primaryAction}
         />
@@ -164,27 +215,44 @@ export function EntityListPage({
         ) : filteredItems.length === 0 ? (
           <EmptyState title={emptyTitle} />
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Status</TableHead>
-                {showActions ? <TableHead className="w-[120px]">Actions</TableHead> : null}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredItems.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.name}</TableCell>
-                  <TableCell>
-                    <StatusBadge status={item.status} />
-                  </TableCell>
-                  {showActions ? (
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  {extraColumns.map((col) => (
+                    <TableHead key={col.header}>{col.header}</TableHead>
+                  ))}
+                  <TableHead>Status</TableHead>
+                  {showActions ? <TableHead className="w-[120px]">Actions</TableHead> : null}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredItems.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>{item.name}</TableCell>
+                    {extraColumns.map((col) => (
+                      <TableCell key={col.header}>{col.cell(item)}</TableCell>
+                    ))}
                     <TableCell>
-                      <div className="flex items-center gap-1">
-                        {extraRowActions?.(item)}
-                        {writePermission ? (
-                          <RequirePermission permission={writePermission}>
+                      <StatusBadge status={item.status} />
+                    </TableCell>
+                    {showActions ? (
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          {extraRowActions?.(item)}
+                          {writePermission ? (
+                            <RequirePermission permission={writePermission}>
+                              <RowActionsDropdown
+                                item={item}
+                                trashedView={trashedView}
+                                onEdit={onEdit}
+                                onSoftDelete={onSoftDelete}
+                                onHardDelete={onHardDelete}
+                                onRestore={onRestore}
+                              />
+                            </RequirePermission>
+                          ) : (
                             <RowActionsDropdown
                               item={item}
                               trashedView={trashedView}
@@ -193,24 +261,24 @@ export function EntityListPage({
                               onHardDelete={onHardDelete}
                               onRestore={onRestore}
                             />
-                          </RequirePermission>
-                        ) : (
-                          <RowActionsDropdown
-                            item={item}
-                            trashedView={trashedView}
-                            onEdit={onEdit}
-                            onSoftDelete={onSoftDelete}
-                            onHardDelete={onHardDelete}
-                            onRestore={onRestore}
-                          />
-                        )}
-                      </div>
-                    </TableCell>
-                  ) : null}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                          )}
+                        </div>
+                      </TableCell>
+                    ) : null}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {serverSide && onPageChange && onLimitChange ? (
+              <TablePagination
+                page={page}
+                limit={limit}
+                total={total}
+                onPageChange={onPageChange}
+                onLimitChange={onLimitChange}
+              />
+            ) : null}
+          </>
         )}
       </CardContent>
     </Card>

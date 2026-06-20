@@ -10,6 +10,7 @@ export const ROUTES = {
   resetPassword: '/auth/reset-password',
   users: '/users',
   employees: '/employees',
+  employeeDepartments: '/employee-departments',
   departments: '/departments',
   positions: '/positions',
   attendance: '/attendance',
