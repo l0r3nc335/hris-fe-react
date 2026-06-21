@@ -15,13 +15,16 @@ npm run dev
 ### Using the real API
 
 1. Start the backend (see `../BE/README.md`): PostgreSQL, migrate, seed, then `npm run start:dev` on `http://localhost:3000`
-2. In this repo's `.env`:
+2. In this repo's `.env`, keep the API base URL empty for normal browser development so Vite can proxy `/api` and preserve the cookie + CSRF flow:
 
 ```
-VITE_API_BASE_URL=http://localhost:3000
+VITE_API_BASE_URL=
 ```
+
+Use `VITE_API_BASE_URL=http://localhost:3000` only for integration tests or non-browser contexts.
 
 3. Login with seeded credentials: `admin@hris.com` / `password`
+4. For the full FE + BE auth flow, see [`FE/.cursor/rules/authentication-walkthrough.mdc`](./.cursor/rules/authentication-walkthrough.mdc)
 
 ## Scripts
 
@@ -49,6 +52,7 @@ VITE_API_BASE_URL=http://localhost:3000
 
 - **Build order (greenfield):** [SETUP_GUIDE_BUILD.md](./SETUP_GUIDE_BUILD.md)
 - **Extended reference:** [SETUP_GUIDE.md](./SETUP_GUIDE.md)
+- **Auth source of truth:** [authentication-walkthrough.mdc](./.cursor/rules/authentication-walkthrough.mdc)
 
 ## Testing
 
@@ -66,5 +70,5 @@ npm run test:all       # both
 
 | Variable | Description |
 |----------|-------------|
-| `VITE_API_BASE_URL` | Backend origin (default `http://localhost:3000`) |
+| `VITE_API_BASE_URL` | Leave empty for browser dev via Vite proxy; set `http://localhost:3000` only for direct API contexts like integration tests |
 | `VITE_SENTRY_DSN` | Optional Sentry DSN |

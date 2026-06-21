@@ -336,30 +336,39 @@ export function ProtectedRoute(): React.JSX.Element {
 
 ## Token storage
 
-| Key | Purpose |
-|-----|---------|
-| `hris_access_token` | JWT access token |
-| `hris_refresh_token` | Refresh token |
-| `hris_tenant_id` | Multi-tenant header |
+The implemented app uses **HttpOnly cookies** for auth, not browser storage.
+
+| Value | Where it lives | Purpose |
+|-----|----------------|---------|
+| `hris_access_token` | HttpOnly cookie | Short-lived JWT access token |
+| `hris_refresh_token` | HttpOnly cookie | Opaque refresh token |
+| `hris_csrf` | Readable cookie + in-memory fallback | CSRF double-submit token |
+| `tenantId` | In memory only | `X-Tenant-Id` header |
 
 ## `httpClient.ts`
 
 ```ts
 // src/services/httpClient.ts — essentials
 export const httpClient = axios.create({
-  baseURL: `${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'}/api/v1`,
+  baseURL: `${import.meta.env.VITE_API_BASE_URL ?? ''}/api/v1`,
+  withCredentials: true,
+  headers: { 'Content-Type': 'application/json' },
 })
 
 httpClient.interceptors.request.use((config) => {
-  if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`
+  const method = config.method?.toUpperCase()
+  if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    const csrfToken = readCsrfToken()
+    if (csrfToken) config.headers['X-CSRF-Token'] = csrfToken
+  }
   if (tenantId) config.headers['X-Tenant-Id'] = tenantId
   return config
 })
 
-export function setAuthHandlers(handlers: { refresh: () => Promise<string | null>; unauthorized: () => void }): void
-export function setAccessToken(token: string | null): void
-export function getAccessToken(): string | null
-export function clearAuthStorage(): void
+export function setAuthHandlers(handlers: { refresh: () => Promise<boolean>; unauthorized: () => void }): void
+export function bootstrapCsrf(): Promise<void>
+export function ensureCsrfReady(): Promise<void>
+export function clearSession(): void
 ```
 
 401 interceptor queues requests and calls `onRefresh` once (wired in §6).
@@ -368,17 +377,18 @@ export function clearAuthStorage(): void
 
 ```ts
 // src/services/api/authApi.ts
-import { httpClient, getRefreshToken } from '@/services/httpClient'
+import { ensureCsrfReady, httpClient } from '@/services/httpClient'
 import { endpoints } from '@/constants/endpoints'
 
 export async function login(payload: LoginPayload): Promise<LoginResult> {
+  await ensureCsrfReady()
   const res = await httpClient.post<ApiResponse<LoginResult>>(endpoints.auth.login, payload)
   return res.data.data
 }
 
 export async function logout(): Promise<void> {
-  const refreshToken = getRefreshToken()
-  await httpClient.post(endpoints.auth.logout, refreshToken ? { refreshToken } : undefined)
+  await ensureCsrfReady()
+  await httpClient.post(endpoints.auth.logout)
 }
 
 export async function fetchMe(): Promise<User> {
@@ -398,6 +408,8 @@ export async function fetchMe(): Promise<User> {
 # 6. Authentication Foundation
 
 ### Session state, bootstrap, LoginPage, and app shell. Requires §2 (UI), §4 (routes), §5 (API).
+
+Historical note: older Bearer-token scaffold snippets have been replaced here with the **implemented cookie + CSRF model**. For the full FE+BE walkthrough, see [`FE/.cursor/rules/authentication-walkthrough.mdc`](./.cursor/rules/authentication-walkthrough.mdc).
 
 ## Auth file map
 
@@ -440,7 +452,7 @@ export const login = createAsyncThunk('auth/login', async (payload, { rejectWith
   }
 })
 
-// login.fulfilled: set user, tokens, tenantId, isAuthenticated = true
+// login.fulfilled: set user, isAuthenticated, tenantId = user.tenantId
 ```
 
 ## LoginPage
@@ -471,12 +483,18 @@ export function bootstrapAuth(store: AppStore): void {
   setAuthHandlers({
     refresh: async () => {
       const result = await store.dispatch(refreshSession())
-      if (refreshSession.fulfilled.match(result)) return result.payload
-      return null
+      return refreshSession.fulfilled.match(result)
     },
-    unauthorized: () => { void store.dispatch(refreshSession()) },
+    unauthorized: () => {
+      // Refresh already failed in the HTTP interceptor; local state is cleared by fetchMe.rejected.
+    },
   })
-  if (getAccessToken()) void store.dispatch(fetchMe())
+  void (async () => {
+    await bootstrapCsrf()
+    if (shouldRestoreSession()) {
+      void store.dispatch(fetchMe())
+    }
+  })()
 }
 ```
 
@@ -500,7 +518,7 @@ export function App() {
 
 ## AuthGate
 
-Shows full-page `PageLoader` while token exists but `user === null` (session restoring via `fetchMe`).
+Shows full-page `PageLoader` while `status === 'loading'` or `isAuthenticated && user === null` during session restore.
 
 ## Layout guards
 

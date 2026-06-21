@@ -445,15 +445,16 @@ export const LoginPage = lazy(() =>
 
 ## Token storage
 
-`sessionStorage` keys (via `httpClient.ts`):
+The implemented app uses **HttpOnly cookies**, not `sessionStorage` or `localStorage`, for access and refresh tokens.
 
-| Key | Purpose |
-|-----|---------|
-| `hris_access_token` | JWT access token |
-| `hris_refresh_token` | Refresh token |
-| `hris_tenant_id` | Multi-tenant header value |
+| Value | Where it lives | Purpose |
+|-----|----------------|---------|
+| `hris_access_token` | HttpOnly cookie | Short-lived JWT access token |
+| `hris_refresh_token` | HttpOnly cookie | Opaque refresh token |
+| `hris_csrf` | Readable cookie + in-memory fallback | Double-submit CSRF protection |
+| `tenantId` | In memory only | `X-Tenant-Id` header for tenant-scoped requests |
 
-In-memory mirrors exist for `accessToken` and `tenantId` for fast interceptor access.
+The frontend only keeps `tenantId` and the CSRF token in memory. The canonical end-to-end reference is [`FE/.cursor/rules/authentication-walkthrough.mdc`](./.cursor/rules/authentication-walkthrough.mdc).
 
 ## Flows
 
@@ -462,8 +463,9 @@ In-memory mirrors exist for `accessToken` and `tenantId` for fast interceptor ac
 ```
 User → /auth/login (AuthLayout)
   → LoginPage dispatches login thunk
-  → authApi.login → BE returns user + tokens + permissions
-  → authSlice stores user, tokens, tenantId
+  → authApi.login → ensureCsrfReady() → POST /auth/login
+  → BE sets auth cookies and returns user only
+  → authSlice stores user, isAuthenticated, tenantId
   → navigate(ROUTES.home) → /dashboard
 ```
 
@@ -474,15 +476,15 @@ void dispatch(login(data)).then((result) => {
 })
 ```
 
-**Logout:** `AppHeader` → Redux `logout` thunk → best-effort `authApi.logout` (sends refresh token) → always `clearAuthStorage` in `finally` → redirect to `ROUTES.login` (`/auth/login`) on `logout.fulfilled`.
+**Logout:** `AppHeader` → Redux `logout` thunk → best-effort `authApi.logout` → always `clearSession()` + `setTenantId(null)` in `finally` → redirect to `ROUTES.login` (`/auth/login`) on `logout.fulfilled`.
 
-**Bootstrap:** `main.tsx` calls `bootstrapAuth(store)` before render. That wires `setAuthHandlers` and, if a token exists, dispatches `fetchMe` to restore `user` (including `permissions`) into Redux.
+**Bootstrap:** `main.tsx` calls `bootstrapAuth(store)` before render. That wires `setAuthHandlers`, calls `bootstrapCsrf()`, and then dispatches `fetchMe` on non-public auth pages to restore the cookie-backed session.
 
-**AuthGate:** While a token exists but `user === null` (session restoring), shows a full-page `PageLoader` until `fetchMe` completes or fails.
+**AuthGate:** While `status === 'loading'` or `isAuthenticated && user === null`, shows a full-page `PageLoader` until session restore completes.
 
-**401 refresh:** Axios response interceptor queues failed requests, calls `refreshSession` thunk once, retries with new token. On refresh failure, clears auth storage.
+**401 refresh:** Axios response interceptor queues failed requests, calls `refreshSession` thunk once, and retries the original request if refresh succeeds. The current `unauthorized` handler is a no-op, so failed refresh during normal in-app requests does not auto-logout yet.
 
-**Request headers:** Every request gets `Authorization: Bearer <token>` and `X-Tenant-Id: <tenantId>` when available.
+**Request headers:** Mutating requests get `X-CSRF-Token`, and tenant-scoped requests get `X-Tenant-Id` when available. There is no `Authorization: Bearer` header in the current implementation.
 
 ## Layout guards
 
@@ -497,23 +499,22 @@ void dispatch(login(data)).then((result) => {
 Auth handlers are wired in [`src/bootstrap/auth.ts`](src/bootstrap/auth.ts), **not** in `App.tsx`:
 
 ```ts
-// src/bootstrap/auth.ts
-import { fetchMe, refreshSession } from '@/slices/authSlice'
-import { setAuthHandlers, getAccessToken } from '@/services/httpClient'
-import type { AppStore } from '@/store'
-
 export function bootstrapAuth(store: AppStore): void {
   setAuthHandlers({
     refresh: async () => {
       const result = await store.dispatch(refreshSession())
-      if (refreshSession.fulfilled.match(result)) return result.payload
-      return null
+      return refreshSession.fulfilled.match(result)
     },
     unauthorized: () => {
-      void store.dispatch(refreshSession())
+      // Refresh already failed in the HTTP interceptor; local state is cleared by fetchMe.rejected.
     },
   })
-  if (getAccessToken()) void store.dispatch(fetchMe())
+  void (async () => {
+    await bootstrapCsrf()
+    if (shouldRestoreSession()) {
+      void store.dispatch(fetchMe())
+    }
+  })()
 }
 ```
 
@@ -525,7 +526,7 @@ Called from `main.tsx` before `createRoot(...).render(...)`.
 - `GET /permissions` is a separate **admin catalog** endpoint (Permissions list page), not used to determine the current user's access.
 - FE checks today: sidebar and global search filter via `usePermission()` + `constants/navigation.ts`.
 - BE enforces permissions on API endpoints via `PermissionsGuard`.
-- `ProtectedRoute` accepts an optional `permissions` prop, and `RequirePermission` can hide UI — **neither is wired to routes or CRUD actions yet**.
+- `ProtectedRoute` accepts an optional `permissions` prop, and three routes already use it today: `tenants`, `billing`, and `admin/health`. `RequirePermission` can still be added where page actions need extra FE-side gating.
 
 To enforce permissions on a route when needed:
 
