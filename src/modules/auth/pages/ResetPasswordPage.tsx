@@ -5,7 +5,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { resetPassword } from '@/services/api/authApi'
 import { Button, Input, Label } from '@/ui'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
+import { PublicPageShell } from '@/modules/public/pages/PublicPageShell'
 import { ROUTES } from '@/constants/routes'
 import { resetPasswordSchema, type ResetPasswordFormData } from '../schemas'
 
@@ -41,13 +42,10 @@ export function ResetPasswordPage(): React.JSX.Element {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl">Reset password</CardTitle>
-        <CardDescription>Enter your new password below</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {!token ? (
+    <PublicPageShell title="Reset password" description="Enter your new password below">
+      <Card className="mx-auto max-w-md">
+        <CardContent className="pt-6">
+          {!token ? (
           <Alert variant="destructive">
             <AlertDescription>
               Invalid reset link. Please request a new password reset.
@@ -95,7 +93,8 @@ export function ResetPasswordPage(): React.JSX.Element {
         <Link to={ROUTES.login} className="mt-4 inline-block text-sm text-primary hover:underline">
           Back to login
         </Link>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </PublicPageShell>
   )
 }

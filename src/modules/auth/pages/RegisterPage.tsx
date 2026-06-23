@@ -6,7 +6,8 @@ import { register as registerApi } from '@/services/api/authApi'
 import { Button } from '@/ui'
 import { Input } from '@/ui'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
+import { PublicPageShell } from '@/modules/public/pages/PublicPageShell'
 import {
   Form,
   FormControl,
@@ -43,13 +44,10 @@ export function RegisterPage(): React.JSX.Element {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl">Register</CardTitle>
-        <CardDescription>Create your HRIS account</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
+    <PublicPageShell title="Register" description="Create your HRIS account">
+      <Card className="mx-auto max-w-md">
+        <CardContent className="pt-6">
+          <Form {...form}>
           <form
             className="space-y-4"
             onSubmit={(e) => {
@@ -123,7 +121,8 @@ export function RegisterPage(): React.JSX.Element {
         <Link to={ROUTES.login} className="mt-4 inline-block text-sm text-primary hover:underline">
           Back to login
         </Link>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </PublicPageShell>
   )
 }

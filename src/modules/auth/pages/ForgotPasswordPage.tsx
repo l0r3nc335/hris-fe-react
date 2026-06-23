@@ -6,7 +6,8 @@ import { forgotPassword } from '@/services/api/authApi'
 import { Button } from '@/ui'
 import { Input } from '@/ui'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
+import { PublicPageShell } from '@/modules/public/pages/PublicPageShell'
 import {
   Form,
   FormControl,
@@ -44,13 +45,13 @@ export function ForgotPasswordPage(): React.JSX.Element {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl">Forgot password</CardTitle>
-        <CardDescription>Enter your email to receive a password reset link</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {success ? (
+    <PublicPageShell
+      title="Forgot password"
+      description="Enter your email to receive a password reset link"
+    >
+      <Card className="mx-auto max-w-md">
+        <CardContent className="pt-6">
+          {success ? (
           <Alert>
             <AlertDescription>
               If an account exists for that email, a reset link has been sent.
@@ -91,7 +92,8 @@ export function ForgotPasswordPage(): React.JSX.Element {
         <Link to={ROUTES.login} className="mt-4 inline-block text-sm text-primary hover:underline">
           Back to login
         </Link>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </PublicPageShell>
   )
 }

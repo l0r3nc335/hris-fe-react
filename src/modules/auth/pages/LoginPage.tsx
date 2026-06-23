@@ -5,7 +5,8 @@ import { useAppDispatch, useAppSelector } from '@/hooks'
 import { login, selectAuth } from '@/slices/authSlice'
 import { Button } from '@/ui'
 import { Input } from '@/ui'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
+import { PublicPageShell } from '@/modules/public/pages/PublicPageShell'
 import {
   Form,
   FormControl,
@@ -35,13 +36,13 @@ export function LoginPage(): React.JSX.Element {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl">Sign in</CardTitle>
-        <CardDescription>Enterprise HRIS — sign in with your account</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
+    <PublicPageShell
+      title="Sign in"
+      description="Enterprise HRIS — sign in with your account"
+    >
+      <Card className="mx-auto max-w-md">
+        <CardContent className="pt-6">
+          <Form {...form}>
           <form
             className="space-y-4"
             onSubmit={(e) => {
@@ -88,7 +89,8 @@ export function LoginPage(): React.JSX.Element {
             Create account
           </Link>
         </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </PublicPageShell>
   )
 }
