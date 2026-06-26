@@ -28,18 +28,23 @@ const uiSlice = createSlice({
   initialState,
   reducers: {
     toggleSidebar(state) {
+      console.log("toggleSidebar")
       state.sidebarOpen = !state.sidebarOpen
     },
     setSidebarOpen(state, action: PayloadAction<boolean>) {
+      console.log("setSidebarOpen")
       state.sidebarOpen = action.payload
     },
     setTheme(state, action: PayloadAction<ThemeMode>) {
+      console.log("setTheme")
       state.theme = action.payload
     },
     setGlobalLoading(state, action: PayloadAction<boolean>) {
+      console.log("setGlobalLoading")
       state.globalLoading = action.payload
     },
     toggleNavGroup(state, action: PayloadAction<string>) {
+      console.log("toggleNavGroup")
       const groupId = action.payload
       const index = state.expandedNavGroups.indexOf(groupId)
       if (index >= 0) {
@@ -49,15 +54,19 @@ const uiSlice = createSlice({
       }
     },
     setExpandedNavGroups(state, action: PayloadAction<string[]>) {
+      console.log("setExpandedNavGroups")
       state.expandedNavGroups = action.payload
     },
     setNotificationsOpen(state, action: PayloadAction<boolean>) {
+      console.log("setNotificationsOpen")
       state.notificationsOpen = action.payload
     },
     setCommandPaletteOpen(state, action: PayloadAction<boolean>) {
+      console.log("setCommandPaletteOpen")
       state.commandPaletteOpen = action.payload
     },
     setSidebarSearchQuery(state, action: PayloadAction<string>) {
+      console.log("setSidebarSearchQuery")
       state.sidebarSearchQuery = action.payload
     },
   },

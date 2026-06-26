@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
-import { Building2, ChevronDown, Search, Settings } from 'lucide-react'
+import { ChevronDown, PanelLeftClose, PanelLeftOpen, Search, Settings } from 'lucide-react'
 import { useAppDispatch, useAppSelector } from '@/hooks'
-import { setSidebarSearchQuery, toggleNavGroup } from '@/slices/uiSlice'
+import { setSidebarSearchQuery, toggleNavGroup, toggleSidebar } from '@/slices/uiSlice'
 import { NAV_GROUPS, type NavItem } from '@/constants/navigation'
 import { usePermission } from '@/hooks/usePermission'
 import { ROUTES } from '@/constants/routes'
@@ -48,7 +48,7 @@ function SidebarNavItem({
       onClick={onNavigate}
       className={({ isActive }) => navLinkClassName(collapsed, isActive)}
     >
-      <item.icon className="h-4 w-4 shrink-0" />
+      <item.icon className={cn('h-4 w-4 shrink-0', collapsed && 'my-2 mx-auto')} />
       {!collapsed ? item.label : null}
     </NavLink>
   )
@@ -87,12 +87,26 @@ export function AppSidebar({
 
   const flatItems = filteredGroups.flatMap((group) => group.items)
 
+  const sidebarToggle = (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => dispatch(toggleSidebar())}
+      aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+    >
+      {collapsed ? (
+        <PanelLeftOpen className="h-5 w-5" />
+      ) : (
+        <PanelLeftClose className="h-5 w-5" />
+      )}
+    </Button>
+  )
+
   if (collapsed) {
     return (
       <div className="flex h-full flex-col">
-        <div className="flex h-14 items-center justify-center border-b border-sidebar-border text-sidebar-foreground">
-          <Building2 className="h-5 w-5" aria-hidden />
-          <span className="sr-only">HRIS Enterprise</span>
+        <div className="flex h-14 items-center justify-center border-b border-sidebar-border">
+          {sidebarToggle}
         </div>
         <ScrollArea className="flex-1">
           <nav className="space-y-1 p-2">
@@ -136,8 +150,9 @@ export function AppSidebar({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-14 items-center border-b border-sidebar-border px-4 font-semibold text-sidebar-foreground">
-        HRIS Enterprise
+      <div className="flex h-14 items-center justify-between border-b border-sidebar-border px-4 font-semibold text-sidebar-foreground">
+        <span>HRIS Enterprise</span>
+        {sidebarToggle}
       </div>
       <div className="border-b border-sidebar-border p-3">
         <div className="relative">

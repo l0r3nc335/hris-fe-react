@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { LogOut, Menu, Moon, Search, Sun } from 'lucide-react'
 import { useAppDispatch, useAppSelector } from '@/hooks'
 import { logout, selectUser } from '@/slices/authSlice'
-import { setCommandPaletteOpen, toggleSidebar } from '@/slices/uiSlice'
+import { setCommandPaletteOpen } from '@/slices/uiSlice'
 import { useTheme } from '@/hooks/useTheme'
 import { Button } from '@/ui'
 import { ROUTES } from '@/constants/routes'
@@ -58,14 +58,6 @@ export function AppHeader(): React.JSX.Element {
               <AppSidebar />
             </SheetContent>
           </Sheet>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden md:inline-flex"
-            onClick={() => dispatch(toggleSidebar())}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
           <div className="hidden min-w-0 flex-col md:flex">
             <span className="truncate text-sm font-medium">{meta.title}</span>
             <AppBreadcrumbs />

@@ -5,7 +5,7 @@ export interface StatusBadgeProps {
 }
 
 function statusVariant(status: string): 'default' | 'secondary' | 'destructive' {
-  const normalized = status.toLowerCase()
+  const normalized = (status ?? 'unknown').toLowerCase()
   if (normalized === 'active' || normalized === 'approved' || normalized === 'completed') {
     return 'default'
   }
@@ -16,5 +16,6 @@ function statusVariant(status: string): 'default' | 'secondary' | 'destructive' 
 }
 
 export function StatusBadge({ status }: StatusBadgeProps): React.JSX.Element {
-  return <Badge variant={statusVariant(status)}>{status}</Badge>
+  const label = status ?? 'unknown'
+  return <Badge variant={statusVariant(label)}>{label}</Badge>
 }

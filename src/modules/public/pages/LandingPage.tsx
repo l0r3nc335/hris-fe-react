@@ -35,7 +35,7 @@ const FEATURES = [
 
 export function LandingPage(): React.JSX.Element {
   return (
-    <div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden">
+    <div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-color-red">
       <div
         className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom_right,var(--color-muted)_0%,transparent_50%)]"
         aria-hidden

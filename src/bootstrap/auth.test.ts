@@ -38,16 +38,22 @@ describe('bootstrapAuth', () => {
     })
   })
 
-  it('bootstraps CSRF and dispatches fetchMe', async () => {
+  it('starts session restore and probes /auth/me on every route', async () => {
     const store = configureStore({ reducer: rootReducer })
+    const originalDispatch = store.dispatch.bind(store)
     const dispatchSpy = vi.spyOn(store, 'dispatch').mockImplementation((action) => {
       if (typeof action === 'function') {
         return Promise.resolve({ type: 'auth/fetchMe/rejected', payload: 'unauthorized' }) as never
       }
-      return action as never
+      return originalDispatch(action)
     })
 
     bootstrapAuth(store)
+
+    expect(store.getState().auth.status).toBe('loading')
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'auth/startSessionRestore' }),
+    )
 
     await vi.waitFor(() => {
       expect(bootstrapCsrf).toHaveBeenCalledOnce()

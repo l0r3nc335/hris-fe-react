@@ -6,11 +6,8 @@ export interface PublicPageShellProps {
   description?: string
 }
 
-export function PublicPageShell({
-  children,
-  title,
-  description,
-}: PublicPageShellProps): React.JSX.Element {
+export function PublicPageShell({children, title, description,}: PublicPageShellProps): React.JSX.Element 
+{
   return (
     <div className="flex h-full w-full flex-col items-center justify-center overflow-hidden px-4 py-6 md:px-6">
       <div className="mx-auto w-full max-w-5xl">

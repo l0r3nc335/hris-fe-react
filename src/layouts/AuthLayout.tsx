@@ -1,11 +1,14 @@
 import { Outlet, Navigate } from 'react-router-dom'
 import { useAppSelector } from '@/hooks'
-import { selectIsAuthenticated } from '@/slices/authSlice'
+import { selectAuthStatus, selectIsAuthenticated } from '@/slices/authSlice'
 import { ROUTES } from '@/constants/routes'
 import { PublicNavbar } from '@/components/layout/PublicNavbar'
 
 export function AuthLayout(): React.JSX.Element {
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
+  const status = useAppSelector(selectAuthStatus)
+
+  if (status === 'loading') return <></>
   if (isAuthenticated) return <Navigate to={ROUTES.home} replace />
 
   return (
