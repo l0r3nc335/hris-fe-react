@@ -8,7 +8,7 @@ export const mockAdminUser: User = {
   tenantId: 'tenant-1',
   createdAt: now,
   updatedAt: now,
-  email: 'admin@hris.com',
+  email: 'admin1@hris.com',
   firstName: 'Admin',
   lastName: 'User',
   role: 'admin',
