@@ -5,6 +5,7 @@ import type { ConfirmDialogProps } from '@/components/ConfirmDialog'
 import type { CreateBody, UpdateBody, ListQueryParams } from '@/services/api/client'
 import type { Permission } from '@/constants/permissions'
 import type { PaginatedListQueryResult } from '@/queries/factory'
+import { resolveSplitNameFields } from '@/utils/personName'
 
 interface EntityListItem {
   id: string
@@ -249,8 +250,7 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
       initialValues: editingItem
         ? nameFields === 'split'
           ? {
-              firstName: editingItem.firstName ?? '',
-              lastName: editingItem.lastName ?? '',
+              ...resolveSplitNameFields(editingItem),
               status: editingItem.status,
               ...Object.fromEntries(
                 formFields.map((field) => [

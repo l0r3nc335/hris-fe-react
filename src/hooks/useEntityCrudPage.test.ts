@@ -67,4 +67,39 @@ describe('useEntityCrudPage', () => {
     expect(result.current.formDialogProps.mode).toBe('create')
     expect(result.current.formDialogProps.title).toBe('Create employee')
   })
+
+  it('populates split name fields from display name when editing', () => {
+    const { result } = renderHook(() =>
+      useEntityCrudPage({
+        title: 'Users',
+        description: 'Manage users',
+        emptyTitle: 'No users found',
+        entitySingular: 'user',
+        nameFields: 'split',
+        hooks: createHooks({
+          useList: () => ({
+            data: [{ id: 'user-1', name: 'Jane Doe', status: 'active' }],
+            meta: { page: 1, limit: 20, total: 1 },
+            isLoading: false,
+          }),
+        }),
+      }),
+    )
+
+    act(() => {
+      result.current.listPageProps.onEdit?.({
+        id: 'user-1',
+        name: 'Jane Doe',
+        status: 'active',
+      })
+    })
+
+    expect(result.current.formDialogProps.initialValues).toEqual(
+      expect.objectContaining({
+        firstName: 'Jane',
+        lastName: 'Doe',
+        status: 'active',
+      }),
+    )
+  })
 })

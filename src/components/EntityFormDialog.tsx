@@ -34,6 +34,8 @@ const STATUS_OPTIONS: SelectOption[] = [
   { value: 'inactive', label: 'Inactive' },
 ]
 
+const EMPTY_FORM_FIELDS: FormFieldConfig[] = []
+
 const defaultValues: EntityFormValues = {
   name: '',
   firstName: '',
@@ -80,7 +82,7 @@ export function EntityFormDialog({
   initialValues,
   onSubmit,
   isPending = false,
-  formFields = [],
+  formFields = EMPTY_FORM_FIELDS,
   statusOptions = STATUS_OPTIONS,
   nameFields = 'single',
 }: EntityFormDialogProps): React.JSX.Element {

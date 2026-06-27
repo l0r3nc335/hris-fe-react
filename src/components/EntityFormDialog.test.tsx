@@ -63,4 +63,21 @@ describe('EntityFormDialog', () => {
       }),
     )
   })
+
+  it('prefills split name fields in edit mode', () => {
+    render(
+      <EntityFormDialog
+        open
+        onOpenChange={() => undefined}
+        mode="edit"
+        title="Edit user"
+        nameFields="split"
+        initialValues={{ firstName: 'Jane', lastName: 'Doe', status: 'active' }}
+        onSubmit={() => undefined}
+      />,
+    )
+
+    expect(screen.getByLabelText('First name')).toHaveValue('Jane')
+    expect(screen.getByLabelText('Last name')).toHaveValue('Doe')
+  })
 })
