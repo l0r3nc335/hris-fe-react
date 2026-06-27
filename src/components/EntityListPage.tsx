@@ -60,6 +60,8 @@ export interface EntityListPageProps {
   headerContent?: React.ReactNode
   /** Hide toolbar search input and status filter. */
   hideToolbarSearch?: boolean
+  /** When true, omit the default Name column (use extraColumns for row labels). */
+  hideNameColumn?: boolean
 }
 
 function RowActionsDropdown({
@@ -148,6 +150,7 @@ export function EntityListPage({
   clientSideFilter = false,
   headerContent,
   hideToolbarSearch = false,
+  hideNameColumn = false,
 }: EntityListPageProps): React.JSX.Element {
   const trashedView = isTrashedView || showDeleted
   const serverPaginated = total !== undefined && !clientSideFilter
@@ -249,7 +252,7 @@ export function EntityListPage({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
+                  {!hideNameColumn ? <TableHead>Name</TableHead> : null}
                   {extraColumns.map((col) => (
                     <TableHead key={col.header}>{col.header}</TableHead>
                   ))}
@@ -260,7 +263,7 @@ export function EntityListPage({
               <TableBody>
                 {displayItems.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell>{item.name}</TableCell>
+                    {!hideNameColumn ? <TableCell>{item.name}</TableCell> : null}
                     {extraColumns.map((col) => (
                       <TableCell key={col.header}>{col.cell(item)}</TableCell>
                     ))}

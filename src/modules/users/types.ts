@@ -5,4 +5,7 @@ export interface UsersEntity extends BaseEntity {
   status: string
   firstName?: string
   lastName?: string
+  email?: string
+  role?: string
+  emailVerified?: boolean
 }

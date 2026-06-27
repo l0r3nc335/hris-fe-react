@@ -16,6 +16,7 @@ import {
   useRemoveUser,
 } from '../hooks'
 import { USER_SEARCH_FIELDS } from '../searchFields'
+import { USER_LIST_COLUMNS } from '../listColumns'
 
 export function UsersListPage(): React.JSX.Element {
   const recordSearch = useRecordSearchList({
@@ -54,6 +55,9 @@ export function UsersListPage(): React.JSX.Element {
         {...crud.listPageProps}
         headerContent={<RecordSearchPanel {...recordSearch.searchPanelProps} />}
         hideToolbarSearch
+        hideNameColumn
+        extraColumns={USER_LIST_COLUMNS}
+        searchKeys={['firstName', 'lastName', 'email', 'role', 'status']}
       />
       <EntityFormDialog {...crud.formDialogProps} />
       <ConfirmDialog {...crud.confirmDialogProps} />
