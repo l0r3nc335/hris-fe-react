@@ -56,6 +56,10 @@ export interface EntityListPageProps {
   onStatusFilterChange?: (value: string) => void
   /** When true, search and status filter run in the browser; pagination slices filtered rows. */
   clientSideFilter?: boolean
+  /** Rendered below the page title and above the list card. */
+  headerContent?: React.ReactNode
+  /** Hide toolbar search input and status filter. */
+  hideToolbarSearch?: boolean
 }
 
 function RowActionsDropdown({
@@ -142,6 +146,8 @@ export function EntityListPage({
   statusFilter,
   onStatusFilterChange,
   clientSideFilter = false,
+  headerContent,
+  hideToolbarSearch = false,
 }: EntityListPageProps): React.JSX.Element {
   const trashedView = isTrashedView || showDeleted
   const serverPaginated = total !== undefined && !clientSideFilter
@@ -223,12 +229,12 @@ export function EntityListPage({
     <Card>
       <CardHeader className="space-y-4 pb-0">
         <DataTableToolbar
-          searchValue={searchQuery}
-          onSearchChange={handleSearchChange}
+          searchValue={hideToolbarSearch ? undefined : searchQuery}
+          onSearchChange={hideToolbarSearch ? undefined : handleSearchChange}
           showDeleted={showDeleted}
           onShowDeletedChange={onShowDeletedChange}
-          statusFilter={activeStatusFilter}
-          onStatusFilterChange={handleStatusFilterChange}
+          statusFilter={hideToolbarSearch ? undefined : activeStatusFilter}
+          onStatusFilterChange={hideToolbarSearch ? undefined : handleStatusFilterChange}
           extra={extraToolbar}
           primaryAction={primaryAction}
         />
@@ -312,6 +318,7 @@ export function EntityListPage({
 
   return (
     <PageShell title={title} description={description}>
+      {headerContent}
       {cardContent}
     </PageShell>
   )

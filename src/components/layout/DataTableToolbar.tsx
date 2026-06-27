@@ -34,19 +34,17 @@ export function DataTableToolbar({
 }: DataTableToolbarProps): React.JSX.Element {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="relative max-w-sm flex-1">
-        {onSearchChange ? (
-          <>
-            <Search className="absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={searchPlaceholder}
-              value={searchValue}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-8"
-            />
-          </>
-        ) : null}
-      </div>
+      {onSearchChange ? (
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder={searchPlaceholder}
+            value={searchValue}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-center gap-3">
         {extra}
         {onStatusFilterChange ? (

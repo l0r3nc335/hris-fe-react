@@ -49,4 +49,44 @@ describe('API integration', () => {
       read: expect.any(Boolean),
     })
   })
+
+  it('searches users with AND criteria via POST /users/search', async () => {
+    const user = await seedAuthFromApi()
+    const headers = { 'X-Tenant-Id': user.tenantId }
+
+    const res = await httpClient.post(
+      '/users/search',
+      { page: 1, limit: 20, isActive: true },
+      { headers },
+    )
+
+    expect(res.data.data).toBeDefined()
+    expect(res.data.meta).toMatchObject({
+      page: 1,
+      limit: 20,
+      total: expect.any(Number),
+    })
+    expect(res.data.data.every((row: { status: string }) => row.status === 'active')).toBe(true)
+  })
+
+  it('searches employees with text criteria via POST /employees/search', async () => {
+    const user = await seedAuthFromApi()
+    const headers = { 'X-Tenant-Id': user.tenantId }
+
+    const res = await httpClient.post(
+      '/employees/search',
+      { page: 1, limit: 20, status: 'active' },
+      { headers },
+    )
+
+    expect(res.data.data).toBeDefined()
+    expect(res.data.meta.total).toBeGreaterThanOrEqual(0)
+    if (res.data.data.length > 0) {
+      expect(res.data.data[0]).toMatchObject({
+        id: expect.any(String),
+        name: expect.any(String),
+        status: 'active',
+      })
+    }
+  })
 })

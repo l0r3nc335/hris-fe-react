@@ -27,6 +27,13 @@ export function apiGetPaginated<T>(url: string, params?: ListQueryParams): Promi
   return httpClient.get<Paginated<T>>(url, { params }).then((res) => res.data)
 }
 
+export function apiPostPaginated<T>(url: string, body?: unknown): Promise<Paginated<T>> {
+  if (import.meta.env.DEV) {
+    console.debug('[api] POST', url, body)
+  }
+  return httpClient.post<Paginated<T>>(url, body).then((res) => res.data)
+}
+
 export function apiPost<T>(url: string, body?: unknown): Promise<T> {
   if (import.meta.env.DEV) {
     console.debug('[api] POST', url)

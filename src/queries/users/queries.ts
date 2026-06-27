@@ -1,5 +1,5 @@
 import { queryKeys } from '@/lib/queryKeys'
-import { usersApi } from '@/services/api/usersApi'
+import { usersApi, searchUsers } from '@/services/api/usersApi'
 import { createResourceQueryHooks } from '../factory'
 
 const hooks = createResourceQueryHooks(queryKeys.users, usersApi)
@@ -11,3 +11,5 @@ export const useUpdateUser = hooks.useUpdate
 export const useSoftDeleteUser = hooks.useSoftDelete
 export const useRestoreUser = hooks.useRestore
 export const useRemoveUser = hooks.useRemove
+
+export { searchUsers }

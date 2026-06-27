@@ -1,6 +1,7 @@
 import { endpoints } from '@/constants/endpoints'
-import { createMutableResourceApi } from './client'
+import { apiPostPaginated, createMutableResourceApi } from './client'
 import type { UsersEntity } from '@/modules/users/types'
+import type { UserSearchCriteria } from '@/types/searchFields'
 
 export const usersApi = createMutableResourceApi<UsersEntity>({
   list: endpoints.users.list,
@@ -11,6 +12,14 @@ export const usersApi = createMutableResourceApi<UsersEntity>({
   deactivate: endpoints.users.deactivate,
   reactivate: endpoints.users.reactivate,
 })
+
+export function searchUsers(
+  criteria: UserSearchCriteria,
+  options: { trashed?: boolean } = {},
+): Promise<import('@/types/api').Paginated<UsersEntity>> {
+  const url = options.trashed ? endpoints.users.searchTrashed : endpoints.users.search
+  return apiPostPaginated<UsersEntity>(url, criteria)
+}
 
 export const listUsers = usersApi.list
 export const getUsers = usersApi.getById

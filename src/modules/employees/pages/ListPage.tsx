@@ -3,12 +3,14 @@ import { EntityListPage } from '@/components/EntityListPage'
 import { EntityFormDialog } from '@/components/EntityFormDialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { EmployeeActionDialog } from '@/components/EmployeeActionDialog'
+import { RecordSearchPanel } from '@/components/RecordSearchPanel'
 import { Button } from '@/ui'
 import { useEntityCrudPage } from '@/hooks/useEntityCrudPage'
+import { useRecordSearchList } from '@/hooks/useRecordSearchList'
 import { PERMISSIONS } from '@/constants/permissions'
+import { queryKeys } from '@/lib/queryKeys'
+import { employeesApi, searchEmployees } from '@/services/api/employeesApi'
 import {
-  useEmployeesList,
-  useEmployeesTrashedList,
   useCreateEmployee,
   useUpdateEmployee,
   useSoftDeleteEmployee,
@@ -17,6 +19,7 @@ import {
   usePromoteEmployeeMutation,
   useTransferEmployeeMutation,
 } from '../hooks'
+import { EMPLOYEE_SEARCH_FIELDS } from '../searchFields'
 
 export function EmployeesListPage(): React.JSX.Element {
   const [actionState, setActionState] = useState<{
@@ -29,6 +32,14 @@ export function EmployeesListPage(): React.JSX.Element {
   const promoteMutation = usePromoteEmployeeMutation()
   const transferMutation = useTransferEmployeeMutation()
 
+  const recordSearch = useRecordSearchList({
+    fields: EMPLOYEE_SEARCH_FIELDS,
+    listFn: employeesApi.list,
+    trashedListFn: employeesApi.listTrashed,
+    searchFn: searchEmployees,
+    queryKeyPrefix: queryKeys.employees.all,
+  })
+
   const crud = useEntityCrudPage({
     title: 'Employees',
     description: 'Manage employee records, promotions, and transfers',
@@ -36,9 +47,11 @@ export function EmployeesListPage(): React.JSX.Element {
     entitySingular: 'employee',
     writePermission: PERMISSIONS.employeesWrite,
     createPermission: PERMISSIONS.employeesWrite,
+    clientSideFilter: false,
+    listSource: recordSearch.listSource,
     hooks: {
-      useList: useEmployeesList,
-      useTrashedList: useEmployeesTrashedList,
+      useList: () => ({ data: undefined, meta: undefined, isLoading: false }),
+      useTrashedList: () => ({ data: undefined, meta: undefined, isLoading: false }),
       useCreate: useCreateEmployee,
       useUpdate: useUpdateEmployee,
       useSoftDelete: useSoftDeleteEmployee,
@@ -60,6 +73,8 @@ export function EmployeesListPage(): React.JSX.Element {
     <>
       <EntityListPage
         {...crud.listPageProps}
+        headerContent={<RecordSearchPanel {...recordSearch.searchPanelProps} />}
+        hideToolbarSearch
         extraRowActions={(item) => (
           <>
             <Button

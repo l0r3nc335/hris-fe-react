@@ -30,6 +30,18 @@ export interface EntityCrudHooks {
   useRemove: () => MutationHookResult<string>
 }
 
+export interface EntityListSourceOverride {
+  items: EntityListItem[]
+  isLoading: boolean
+  total: number
+  page: number
+  limit: number
+  showDeleted: boolean
+  onPageChange: (page: number) => void
+  onLimitChange: (limit: number) => void
+  onShowDeletedChange: (show: boolean) => void
+}
+
 export interface UseEntityCrudPageConfig {
   title: string
   description: string
@@ -45,6 +57,8 @@ export interface UseEntityCrudPageConfig {
   searchKeys?: string[]
   /** When true (default), search and status filter run in the browser; show-deleted still uses the API. */
   clientSideFilter?: boolean
+  /** When provided, external list/search state replaces internal list fetching. */
+  listSource?: EntityListSourceOverride
   hooks: EntityCrudHooks | (Pick<EntityCrudHooks, 'useList'> & Partial<Omit<EntityCrudHooks, 'useList'>>)
 }
 
@@ -81,10 +95,17 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
     writePermission,
     searchKeys,
     clientSideFilter = true,
+    listSource,
   } = config
-  const [showDeleted, setShowDeleted] = useState(false)
-  const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(20)
+  const [showDeletedInternal, setShowDeletedInternal] = useState(false)
+  const [pageInternal, setPageInternal] = useState(1)
+  const [limitInternal, setLimitInternal] = useState(20)
+  const showDeleted = listSource?.showDeleted ?? showDeletedInternal
+  const setShowDeleted = listSource?.onShowDeletedChange ?? setShowDeletedInternal
+  const page = listSource?.page ?? pageInternal
+  const setPage = listSource?.onPageChange ?? setPageInternal
+  const limit = listSource?.limit ?? limitInternal
+  const setLimit = listSource?.onLimitChange ?? setLimitInternal
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [formOpen, setFormOpen] = useState(false)
@@ -104,12 +125,14 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
         status: statusFilter,
       }
 
-  const activeQuery = config.hooks.useList(listParams)
-  const trashedQuery = config.hooks.useTrashedList?.(listParams) ?? {
-    data: undefined,
-    meta: undefined,
-    isLoading: false,
-  }
+  const activeQuery = listSource ? null : config.hooks.useList(listParams)
+  const trashedQuery = listSource
+    ? null
+    : (config.hooks.useTrashedList?.(listParams) ?? {
+        data: undefined,
+        meta: undefined,
+        isLoading: false,
+      })
   const createMutation = config.hooks.useCreate?.() ?? { mutate: () => undefined, isPending: false }
   const updateMutation = config.hooks.useUpdate?.() ?? { mutate: () => undefined, isPending: false }
   const softDeleteMutation = config.hooks.useSoftDelete?.() ?? { mutate: () => undefined, isPending: false }
@@ -120,9 +143,19 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
     setPage(1)
   }, [searchQuery, statusFilter, showDeleted])
 
-  const items = (showDeleted ? trashedQuery.data : activeQuery.data) ?? []
-  const isLoading = showDeleted ? trashedQuery.isLoading : activeQuery.isLoading
-  const apiTotal = showDeleted ? trashedQuery.meta?.total ?? 0 : activeQuery.meta?.total ?? 0
+  const items = listSource
+    ? listSource.items
+    : ((showDeleted ? trashedQuery!.data : activeQuery!.data) ?? [])
+  const isLoading = listSource
+    ? listSource.isLoading
+    : showDeleted
+      ? trashedQuery!.isLoading
+      : activeQuery!.isLoading
+  const apiTotal = listSource
+    ? listSource.total
+    : showDeleted
+      ? (trashedQuery!.meta?.total ?? 0)
+      : (activeQuery!.meta?.total ?? 0)
 
   const openCreate = (): void => {
     setFormMode('create')
