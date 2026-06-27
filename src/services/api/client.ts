@@ -66,13 +66,17 @@ export interface ResourceEndpoints {
 }
 
 export interface CreateBody {
-  name: string
+  name?: string
+  firstName?: string
+  lastName?: string
   status?: string
   [key: string]: string | undefined
 }
 
 export interface UpdateBody {
   name?: string
+  firstName?: string
+  lastName?: string
   status?: string
   [key: string]: string | undefined
 }

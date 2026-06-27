@@ -32,4 +32,35 @@ describe('EntityFormDialog', () => {
       }),
     )
   })
+
+  it('renders split name fields and submits first and last name', async () => {
+    const user = userEvent.setup()
+    const onSubmit = vi.fn()
+
+    render(
+      <EntityFormDialog
+        open
+        onOpenChange={() => undefined}
+        mode="create"
+        title="Create user"
+        nameFields="split"
+        onSubmit={onSubmit}
+        formFields={[EMAIL_FIELD]}
+      />,
+    )
+
+    await user.type(screen.getByLabelText('First name'), 'Jane')
+    await user.type(screen.getByLabelText('Last name'), 'Doe')
+    await user.type(screen.getByLabelText('Email'), 'jane@example.com')
+    await user.click(screen.getByRole('button', { name: 'Create' }))
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        firstName: 'Jane',
+        lastName: 'Doe',
+        email: 'jane@example.com',
+        status: 'active',
+      }),
+    )
+  })
 })

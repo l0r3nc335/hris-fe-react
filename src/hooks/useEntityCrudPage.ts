@@ -10,6 +10,8 @@ interface EntityListItem {
   id: string
   name: string
   status: string
+  firstName?: string
+  lastName?: string
 }
 
 interface MutationHookResult<TVariables> {
@@ -35,6 +37,8 @@ export interface UseEntityCrudPageConfig {
   readOnly?: boolean
   formFields?: FormFieldConfig[]
   statusOptions?: import('@/ui/Select').SelectOption[]
+  /** When 'split', the form uses first name / last name fields and sends them to the API. */
+  nameFields?: 'single' | 'split'
   createPermission?: Permission
   writePermission?: Permission
   hooks: EntityCrudHooks | (Pick<EntityCrudHooks, 'useList'> & Partial<Omit<EntityCrudHooks, 'useList'>>)
@@ -54,6 +58,7 @@ export interface UseEntityCrudPageResult {
     isPending: boolean
     formFields?: FormFieldConfig[]
     statusOptions?: import('@/ui/Select').SelectOption[]
+    nameFields?: 'single' | 'split'
   }
   confirmDialogProps: ConfirmDialogProps
 }
@@ -67,6 +72,7 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
     readOnly = false,
     formFields = [],
     statusOptions,
+    nameFields = 'single',
     createPermission,
     writePermission,
   } = config
@@ -124,8 +130,13 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
 
   const toApiBody = (data: EntityFormValues): CreateBody & UpdateBody => {
     const body: CreateBody & UpdateBody = {
-      name: data.name,
       status: data.status,
+    }
+    if (nameFields === 'split') {
+      body.firstName = data.firstName
+      body.lastName = data.lastName
+    } else {
+      body.name = data.name
     }
     for (const field of formFields) {
       const value = data[field.key]
@@ -236,22 +247,35 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
       mode: formMode,
       title: formMode === 'create' ? `Create ${entitySingular}` : `Edit ${entitySingular}`,
       initialValues: editingItem
-        ? {
-            name: editingItem.name,
-            status: editingItem.status,
-            ...Object.fromEntries(
-              formFields.map((field) => [
-                field.key,
-                String((editingItem as unknown as Record<string, unknown>)[field.key] ?? ''),
-              ]),
-            ),
-          }
+        ? nameFields === 'split'
+          ? {
+              firstName: editingItem.firstName ?? '',
+              lastName: editingItem.lastName ?? '',
+              status: editingItem.status,
+              ...Object.fromEntries(
+                formFields.map((field) => [
+                  field.key,
+                  String((editingItem as unknown as Record<string, unknown>)[field.key] ?? ''),
+                ]),
+              ),
+            }
+          : {
+              name: editingItem.name,
+              status: editingItem.status,
+              ...Object.fromEntries(
+                formFields.map((field) => [
+                  field.key,
+                  String((editingItem as unknown as Record<string, unknown>)[field.key] ?? ''),
+                ]),
+              ),
+            }
         : undefined,
       onSubmit: handleFormSubmit,
       isPending:
         formMode === 'create' ? createMutation.isPending : updateMutation.isPending,
       formFields,
       statusOptions,
+      nameFields,
     },
     confirmDialogProps: {
       open: confirmAction !== null,

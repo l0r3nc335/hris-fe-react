@@ -3,9 +3,11 @@ import { Button, Input, Label, Modal, Select, Textarea } from '@/ui'
 import type { SelectOption } from '@/ui/Select'
 
 export interface EntityFormValues {
-  name: string
+  name?: string
+  firstName?: string
+  lastName?: string
   status: string
-  [key: string]: string
+  [key: string]: string | undefined
 }
 
 export type FormFieldConfig =
@@ -23,6 +25,8 @@ export interface EntityFormDialogProps {
   isPending?: boolean
   formFields?: FormFieldConfig[]
   statusOptions?: SelectOption[]
+  /** When 'split', show first name and last name fields instead of a single name field. */
+  nameFields?: 'single' | 'split'
 }
 
 const STATUS_OPTIONS: SelectOption[] = [
@@ -30,21 +34,42 @@ const STATUS_OPTIONS: SelectOption[] = [
   { value: 'inactive', label: 'Inactive' },
 ]
 
-const defaultValues: EntityFormValues = { name: '', status: 'active' }
+const defaultValues: EntityFormValues = {
+  name: '',
+  firstName: '',
+  lastName: '',
+  status: 'active',
+}
 
 function buildInitialState(
   initialValues: EntityFormValues | undefined,
   formFields: FormFieldConfig[],
   defaultStatus: string,
+  nameFields: 'single' | 'split',
 ): EntityFormValues {
   const state: EntityFormValues = {
     name: initialValues?.name ?? defaultValues.name,
+    firstName: initialValues?.firstName ?? defaultValues.firstName,
+    lastName: initialValues?.lastName ?? defaultValues.lastName,
     status: initialValues?.status ?? defaultStatus,
   }
   for (const field of formFields) {
     state[field.key] = initialValues?.[field.key] ?? ''
   }
+  if (nameFields === 'single') {
+    delete state.firstName
+    delete state.lastName
+  } else {
+    delete state.name
+  }
   return state
+}
+
+function isFormValid(values: EntityFormValues, nameFields: 'single' | 'split'): boolean {
+  if (nameFields === 'split') {
+    return Boolean(values.firstName?.trim() && values.lastName?.trim())
+  }
+  return Boolean(values.name?.trim())
 }
 
 export function EntityFormDialog({
@@ -57,27 +82,41 @@ export function EntityFormDialog({
   isPending = false,
   formFields = [],
   statusOptions = STATUS_OPTIONS,
+  nameFields = 'single',
 }: EntityFormDialogProps): React.JSX.Element {
   const defaultStatus = statusOptions[0]?.value ?? 'active'
   const [values, setValues] = useState<EntityFormValues>(() =>
-    buildInitialState(initialValues, formFields, defaultStatus),
+    buildInitialState(initialValues, formFields, defaultStatus, nameFields),
   )
 
   useEffect(() => {
     if (open) {
-      setValues(buildInitialState(initialValues, formFields, defaultStatus))
+      setValues(buildInitialState(initialValues, formFields, defaultStatus, nameFields))
     }
-  }, [open, initialValues, formFields, defaultStatus])
+  }, [open, initialValues, formFields, defaultStatus, nameFields])
 
   const setField = (key: string, value: string): void => {
     setValues((prev) => ({ ...prev, [key]: value }))
   }
 
   const handleSubmit = (): void => {
-    if (!values.name?.trim()) return
-    onSubmit({ ...values, name: values.name.trim() })
+    if (!isFormValid(values, nameFields)) return
+    const payload: EntityFormValues = {
+      ...values,
+      status: values.status,
+    }
+    if (nameFields === 'split') {
+      payload.firstName = values.firstName?.trim() ?? ''
+      payload.lastName = values.lastName?.trim() ?? ''
+      delete payload.name
+    } else {
+      payload.name = values.name?.trim() ?? ''
+      delete payload.firstName
+      delete payload.lastName
+    }
+    onSubmit(payload)
     if (mode === 'create') {
-      setValues(buildInitialState(undefined, formFields, defaultStatus))
+      setValues(buildInitialState(undefined, formFields, defaultStatus, nameFields))
     }
     onOpenChange(false)
   }
@@ -94,7 +133,7 @@ export function EntityFormDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isPending || !values.name?.trim()}>
+          <Button onClick={handleSubmit} disabled={isPending || !isFormValid(values, nameFields)}>
             {isPending
               ? mode === 'create'
                 ? 'Creating...'
@@ -107,15 +146,38 @@ export function EntityFormDialog({
       }
     >
       <div className="grid gap-4">
-        <div className="grid gap-2">
-          <Label htmlFor="entity-name">Name</Label>
-          <Input
-            id="entity-name"
-            value={values.name ?? ''}
-            onChange={(e) => setField('name', e.target.value)}
-            placeholder="Enter name"
-          />
-        </div>
+        {nameFields === 'split' ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="entity-first-name">First name</Label>
+              <Input
+                id="entity-first-name"
+                value={values.firstName ?? ''}
+                onChange={(e) => setField('firstName', e.target.value)}
+                placeholder="First name"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="entity-last-name">Last name</Label>
+              <Input
+                id="entity-last-name"
+                value={values.lastName ?? ''}
+                onChange={(e) => setField('lastName', e.target.value)}
+                placeholder="Last name"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="grid gap-2">
+            <Label htmlFor="entity-name">Name</Label>
+            <Input
+              id="entity-name"
+              value={values.name ?? ''}
+              onChange={(e) => setField('name', e.target.value)}
+              placeholder="Enter name"
+            />
+          </div>
+        )}
         <div className="grid gap-2">
           <Label htmlFor="entity-status">Status</Label>
           <Select

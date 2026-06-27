@@ -20,6 +20,7 @@ export function UsersListPage(): React.JSX.Element {
     description: 'Manage user accounts',
     emptyTitle: 'No users found',
     entitySingular: 'user',
+    nameFields: 'split',
     formFields: [EMAIL_FIELD],
     createPermission: PERMISSIONS.usersWrite,
     writePermission: PERMISSIONS.usersWrite,
