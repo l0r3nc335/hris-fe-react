@@ -56,6 +56,7 @@ export function UsersListPage(): React.JSX.Element {
         headerContent={<RecordSearchPanel {...recordSearch.searchPanelProps} />}
         hideToolbarSearch
         hideNameColumn
+        clientSideSort
         extraColumns={USER_LIST_COLUMNS}
         searchKeys={['firstName', 'lastName', 'email', 'role', 'status']}
       />

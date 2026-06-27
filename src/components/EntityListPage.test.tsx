@@ -93,4 +93,40 @@ describe('EntityListPage', () => {
     await user.type(screen.getByPlaceholderText('Search records...'), 'jane')
     expect(onSearchChange).toHaveBeenCalled()
   })
+
+  it('sorts rows client-side when clientSideSort is enabled', async () => {
+    const user = userEvent.setup()
+
+    renderWithProviders(
+      <EntityListPage
+        title="Users"
+        description="Manage users"
+        emptyTitle="No users found"
+        items={[
+          { id: '1', name: 'Zoe', status: 'active', firstName: 'Zoe' },
+          { id: '2', name: 'Amy', status: 'active', firstName: 'Amy' },
+        ]}
+        isLoading={false}
+        clientSideSort
+        hideNameColumn
+        extraColumns={[
+          {
+            header: 'First Name',
+            sortKey: 'firstName',
+            sortValue: (item) => String((item as { firstName?: string }).firstName ?? ''),
+            cell: (item) => String((item as { firstName?: string }).firstName ?? '—'),
+          },
+        ]}
+      />,
+    )
+
+    const rows = () => screen.getAllByRole('row').slice(1).map((row) => row.textContent)
+    expect(rows()[0]).toContain('Zoe')
+
+    await user.click(screen.getByRole('button', { name: 'Sort by First Name' }))
+    expect(rows()[0]).toContain('Amy')
+
+    await user.click(screen.getByRole('button', { name: 'Sort by First Name' }))
+    expect(rows()[0]).toContain('Zoe')
+  })
 })

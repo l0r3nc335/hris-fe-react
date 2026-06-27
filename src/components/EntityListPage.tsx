@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { MoreHorizontal } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, MoreHorizontal } from 'lucide-react'
 import { EmptyState } from '@/components/EmptyState'
 import { TableSkeleton } from '@/components/TableSkeleton'
 import { StatusBadge } from '@/components/StatusBadge'
@@ -21,6 +21,16 @@ interface EntityListItem {
 export interface EntityListExtraColumn {
   header: string
   cell: (item: EntityListItem) => React.ReactNode
+  /** When clientSideSort is enabled, clicking the header sorts by this field. */
+  sortKey?: string
+  sortValue?: (item: EntityListItem) => string | number | boolean
+}
+
+type SortDirection = 'asc' | 'desc'
+
+interface SortState {
+  key: string
+  direction: SortDirection
 }
 
 export interface EntityListPageProps {
@@ -62,6 +72,63 @@ export interface EntityListPageProps {
   hideToolbarSearch?: boolean
   /** When true, omit the default Name column (use extraColumns for row labels). */
   hideNameColumn?: boolean
+  /** When true, sortable column headers sort the current rows in the browser. */
+  clientSideSort?: boolean
+}
+
+function compareSortValues(a: unknown, b: unknown): number {
+  if (typeof a === 'boolean' || typeof b === 'boolean') {
+    return Number(Boolean(a)) - Number(Boolean(b))
+  }
+  if (typeof a === 'number' && typeof b === 'number') {
+    return a - b
+  }
+  return String(a ?? '').localeCompare(String(b ?? ''), undefined, { sensitivity: 'base' })
+}
+
+function sortListItems<T extends EntityListItem>(
+  items: T[],
+  sortState: SortState | null,
+  getValue: (item: T, key: string) => unknown,
+): T[] {
+  if (!sortState) return items
+  const sorted = [...items]
+  const direction = sortState.direction === 'asc' ? 1 : -1
+  sorted.sort(
+    (a, b) => compareSortValues(getValue(a, sortState.key), getValue(b, sortState.key)) * direction,
+  )
+  return sorted
+}
+
+function SortableTableHead({
+  label,
+  sortKey,
+  sortState,
+  onSort,
+}: {
+  label: string
+  sortKey: string
+  sortState: SortState | null
+  onSort: (key: string) => void
+}): React.JSX.Element {
+  const active = sortState?.key === sortKey
+  const direction = active ? sortState.direction : undefined
+  const SortIcon = active ? (direction === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown
+
+  return (
+    <TableHead>
+      <button
+        type="button"
+        className="inline-flex items-center gap-1 font-medium hover:text-foreground"
+        aria-label={`Sort by ${label}`}
+        aria-sort={active ? (direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+        onClick={() => onSort(sortKey)}
+      >
+        {label}
+        <SortIcon className={`h-3.5 w-3.5 ${active ? '' : 'text-muted-foreground'}`} aria-hidden />
+      </button>
+    </TableHead>
+  )
 }
 
 function RowActionsDropdown({
@@ -151,12 +218,14 @@ export function EntityListPage({
   headerContent,
   hideToolbarSearch = false,
   hideNameColumn = false,
+  clientSideSort = false,
 }: EntityListPageProps): React.JSX.Element {
   const trashedView = isTrashedView || showDeleted
   const serverPaginated = total !== undefined && !clientSideFilter
   const filterOnClient = clientSideFilter || !serverPaginated
   const [localSearchQuery, setLocalSearchQuery] = useState('')
   const [localStatusFilter, setLocalStatusFilter] = useState('all')
+  const [sortState, setSortState] = useState<SortState | null>(null)
 
   const searchQuery = clientSideFilter
     ? (searchValue ?? '')
@@ -202,11 +271,36 @@ export function EntityListPage({
     )
   }, [items, searchKeys, searchQuery, activeStatusFilter, filterOnClient])
 
+  const resolveSortValue = (item: EntityListItem, key: string): unknown => {
+    if (key === 'name') return item.name
+    if (key === 'status') return item.status
+    const column = extraColumns.find((col) => col.sortKey === key)
+    if (column?.sortValue) return column.sortValue(item)
+    if (column) {
+      return (item as unknown as Record<string, unknown>)[key]
+    }
+    return (item as unknown as Record<string, unknown>)[key]
+  }
+
+  const handleSort = (key: string): void => {
+    setSortState((current) => {
+      if (current?.key === key) {
+        return { key, direction: current.direction === 'asc' ? 'desc' : 'asc' }
+      }
+      return { key, direction: 'asc' }
+    })
+  }
+
+  const sortedItems = useMemo(() => {
+    if (!clientSideSort) return filteredItems
+    return sortListItems(filteredItems, sortState, resolveSortValue)
+  }, [clientSideSort, filteredItems, sortState, extraColumns])
+
   const displayItems = useMemo(() => {
-    if (!clientSideFilter) return filteredItems
+    if (!clientSideFilter) return sortedItems
     const start = (page - 1) * limit
-    return filteredItems.slice(start, start + limit)
-  }, [clientSideFilter, filteredItems, page, limit])
+    return sortedItems.slice(start, start + limit)
+  }, [clientSideFilter, sortedItems, page, limit])
 
   const paginationTotal = clientSideFilter ? filteredItems.length : total
   const showPagination =
@@ -252,11 +346,41 @@ export function EntityListPage({
             <Table>
               <TableHeader>
                 <TableRow>
-                  {!hideNameColumn ? <TableHead>Name</TableHead> : null}
-                  {extraColumns.map((col) => (
-                    <TableHead key={col.header}>{col.header}</TableHead>
-                  ))}
-                  <TableHead>Status</TableHead>
+                  {!hideNameColumn ? (
+                    clientSideSort ? (
+                      <SortableTableHead
+                        label="Name"
+                        sortKey="name"
+                        sortState={sortState}
+                        onSort={handleSort}
+                      />
+                    ) : (
+                      <TableHead>Name</TableHead>
+                    )
+                  ) : null}
+                  {extraColumns.map((col) =>
+                    clientSideSort && col.sortKey ? (
+                      <SortableTableHead
+                        key={col.header}
+                        label={col.header}
+                        sortKey={col.sortKey}
+                        sortState={sortState}
+                        onSort={handleSort}
+                      />
+                    ) : (
+                      <TableHead key={col.header}>{col.header}</TableHead>
+                    ),
+                  )}
+                  {clientSideSort ? (
+                    <SortableTableHead
+                      label="Status"
+                      sortKey="status"
+                      sortState={sortState}
+                      onSort={handleSort}
+                    />
+                  ) : (
+                    <TableHead>Status</TableHead>
+                  )}
                   {showActions ? <TableHead className="w-[120px]">Actions</TableHead> : null}
                 </TableRow>
               </TableHeader>
