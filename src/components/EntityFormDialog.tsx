@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button, Input, Label, Modal, Select, Textarea } from '@/ui'
 import type { SelectOption } from '@/ui/Select'
 
@@ -91,10 +91,12 @@ export function EntityFormDialog({
     buildInitialState(initialValues, formFields, defaultStatus, nameFields),
   )
 
+  const wasOpenRef = useRef(false)
   useEffect(() => {
-    if (open) {
+    if (open && !wasOpenRef.current) {
       setValues(buildInitialState(initialValues, formFields, defaultStatus, nameFields))
     }
+    wasOpenRef.current = open
   }, [open, initialValues, formFields, defaultStatus, nameFields])
 
   const setField = (key: string, value: string): void => {
@@ -183,6 +185,7 @@ export function EntityFormDialog({
         <div className="grid gap-2">
           <Label htmlFor="entity-status">Status</Label>
           <Select
+            id="entity-status"
             value={values.status ?? 'active'}
             onValueChange={(v) => setField('status', v)}
             placeholder="Select status"

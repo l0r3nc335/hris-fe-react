@@ -46,6 +46,7 @@ describe('useEntityCrudPage', () => {
     expect(result.current.listPageProps.title).toBe('Employees')
     expect(result.current.listPageProps.items).toEqual(mockListItems)
     expect(result.current.listPageProps.showActions).toBe(true)
+    expect(result.current.listPageProps.clientSideFilter).toBe(true)
   })
 
   it('opens create form when onCreate is triggered', () => {

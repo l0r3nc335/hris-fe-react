@@ -42,6 +42,9 @@ export interface UseEntityCrudPageConfig {
   nameFields?: 'single' | 'split'
   createPermission?: Permission
   writePermission?: Permission
+  searchKeys?: string[]
+  /** When true (default), search and status filter run in the browser; show-deleted still uses the API. */
+  clientSideFilter?: boolean
   hooks: EntityCrudHooks | (Pick<EntityCrudHooks, 'useList'> & Partial<Omit<EntityCrudHooks, 'useList'>>)
 }
 
@@ -76,6 +79,8 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
     nameFields = 'single',
     createPermission,
     writePermission,
+    searchKeys,
+    clientSideFilter = true,
   } = config
   const [showDeleted, setShowDeleted] = useState(false)
   const [page, setPage] = useState(1)
@@ -90,12 +95,14 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
     id: string
   } | null>(null)
 
-  const listParams: ListQueryParams = {
-    page,
-    limit,
-    q: searchQuery.trim() || undefined,
-    status: statusFilter,
-  }
+  const listParams: ListQueryParams = clientSideFilter
+    ? { page: 1, limit: 100 }
+    : {
+        page,
+        limit,
+        q: searchQuery.trim() || undefined,
+        status: statusFilter,
+      }
 
   const activeQuery = config.hooks.useList(listParams)
   const trashedQuery = config.hooks.useTrashedList?.(listParams) ?? {
@@ -115,7 +122,7 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
 
   const items = (showDeleted ? trashedQuery.data : activeQuery.data) ?? []
   const isLoading = showDeleted ? trashedQuery.isLoading : activeQuery.isLoading
-  const total = showDeleted ? trashedQuery.meta?.total ?? 0 : activeQuery.meta?.total ?? 0
+  const apiTotal = showDeleted ? trashedQuery.meta?.total ?? 0 : activeQuery.meta?.total ?? 0
 
   const openCreate = (): void => {
     setFormMode('create')
@@ -131,7 +138,7 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
 
   const toApiBody = (data: EntityFormValues): CreateBody & UpdateBody => {
     const body: CreateBody & UpdateBody = {
-      status: data.status,
+      status: data.status ?? 'active',
     }
     if (nameFields === 'split') {
       body.firstName = data.firstName
@@ -210,7 +217,7 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
       emptyTitle: showDeleted ? `No deleted ${entitySingular}s found` : emptyTitle,
       items,
       isLoading,
-      total,
+      total: clientSideFilter ? undefined : apiTotal,
       page,
       limit,
       onPageChange: setPage,
@@ -222,6 +229,7 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
       onSearchChange: setSearchQuery,
       statusFilter,
       onStatusFilterChange: setStatusFilter,
+      clientSideFilter,
       showDeleted,
       onShowDeletedChange: readOnly ? undefined : setShowDeleted,
       onCreate: readOnly ? undefined : openCreate,
@@ -241,6 +249,7 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
       isTrashedView: showDeleted,
       createPermission,
       writePermission,
+      searchKeys,
     },
     formDialogProps: {
       open: formOpen,

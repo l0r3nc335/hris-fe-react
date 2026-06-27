@@ -54,6 +54,8 @@ export interface EntityListPageProps {
   onSearchChange?: (value: string) => void
   statusFilter?: string
   onStatusFilterChange?: (value: string) => void
+  /** When true, search and status filter run in the browser; pagination slices filtered rows. */
+  clientSideFilter?: boolean
 }
 
 function RowActionsDropdown({
@@ -139,17 +141,27 @@ export function EntityListPage({
   onSearchChange,
   statusFilter,
   onStatusFilterChange,
+  clientSideFilter = false,
 }: EntityListPageProps): React.JSX.Element {
   const trashedView = isTrashedView || showDeleted
-  const serverSide = total !== undefined
+  const serverPaginated = total !== undefined && !clientSideFilter
+  const filterOnClient = clientSideFilter || !serverPaginated
   const [localSearchQuery, setLocalSearchQuery] = useState('')
   const [localStatusFilter, setLocalStatusFilter] = useState('all')
 
-  const searchQuery = serverSide ? (searchValue ?? '') : localSearchQuery
-  const activeStatusFilter = serverSide ? (statusFilter ?? 'all') : localStatusFilter
+  const searchQuery = clientSideFilter
+    ? (searchValue ?? '')
+    : serverPaginated
+      ? (searchValue ?? '')
+      : localSearchQuery
+  const activeStatusFilter = clientSideFilter
+    ? (statusFilter ?? 'all')
+    : serverPaginated
+      ? (statusFilter ?? 'all')
+      : localStatusFilter
 
   const handleSearchChange = (value: string): void => {
-    if (serverSide) {
+    if (clientSideFilter || serverPaginated) {
       onSearchChange?.(value)
       return
     }
@@ -157,7 +169,7 @@ export function EntityListPage({
   }
 
   const handleStatusFilterChange = (value: string): void => {
-    if (serverSide) {
+    if (clientSideFilter || serverPaginated) {
       onStatusFilterChange?.(value)
       return
     }
@@ -165,7 +177,7 @@ export function EntityListPage({
   }
 
   const filteredItems = useMemo(() => {
-    if (serverSide) return items
+    if (!filterOnClient) return items
     let result = items
     if (activeStatusFilter !== 'all') {
       result = result.filter((item) => item.status.toLowerCase() === activeStatusFilter)
@@ -179,7 +191,19 @@ export function EntityListPage({
           .includes(q),
       ),
     )
-  }, [items, searchKeys, searchQuery, activeStatusFilter, serverSide])
+  }, [items, searchKeys, searchQuery, activeStatusFilter, filterOnClient])
+
+  const displayItems = useMemo(() => {
+    if (!clientSideFilter) return filteredItems
+    const start = (page - 1) * limit
+    return filteredItems.slice(start, start + limit)
+  }, [clientSideFilter, filteredItems, page, limit])
+
+  const paginationTotal = clientSideFilter ? filteredItems.length : total
+  const showPagination =
+    clientSideFilter || serverPaginated
+      ? onPageChange !== undefined && onLimitChange !== undefined
+      : false
 
   const addButton =
     onCreate ? (
@@ -228,7 +252,7 @@ export function EntityListPage({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredItems.map((item) => (
+                {displayItems.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell>{item.name}</TableCell>
                     {extraColumns.map((col) => (
@@ -269,13 +293,13 @@ export function EntityListPage({
                 ))}
               </TableBody>
             </Table>
-            {serverSide && onPageChange && onLimitChange ? (
+            {showPagination ? (
               <TablePagination
                 page={page}
                 limit={limit}
-                total={total}
-                onPageChange={onPageChange}
-                onLimitChange={onLimitChange}
+                total={paginationTotal ?? 0}
+                onPageChange={onPageChange!}
+                onLimitChange={onLimitChange!}
               />
             ) : null}
           </>

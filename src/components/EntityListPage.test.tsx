@@ -59,4 +59,38 @@ describe('EntityListPage', () => {
     fireEvent.click(screen.getByLabelText('Show deleted'))
     expect(onShowDeletedChange).toHaveBeenCalledWith(true)
   })
+
+  it('filters rows client-side when clientSideFilter is enabled', async () => {
+    const user = userEvent.setup()
+    const onSearchChange = vi.fn()
+    const onStatusFilterChange = vi.fn()
+
+    renderWithProviders(
+      <EntityListPage
+        title="Users"
+        description="Manage users"
+        emptyTitle="No users found"
+        items={[
+          { id: '1', name: 'Jane Doe', status: 'active' },
+          { id: '2', name: 'John Smith', status: 'inactive' },
+        ]}
+        isLoading={false}
+        clientSideFilter
+        searchValue=""
+        onSearchChange={onSearchChange}
+        statusFilter="all"
+        onStatusFilterChange={onStatusFilterChange}
+        page={1}
+        limit={20}
+        onPageChange={() => undefined}
+        onLimitChange={() => undefined}
+      />,
+    )
+
+    expect(screen.getByText('Jane Doe')).toBeInTheDocument()
+    expect(screen.getByText('John Smith')).toBeInTheDocument()
+
+    await user.type(screen.getByPlaceholderText('Search records...'), 'jane')
+    expect(onSearchChange).toHaveBeenCalled()
+  })
 })

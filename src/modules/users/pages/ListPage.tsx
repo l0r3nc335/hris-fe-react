@@ -24,6 +24,7 @@ export function UsersListPage(): React.JSX.Element {
     formFields: [EMAIL_FIELD],
     createPermission: PERMISSIONS.usersWrite,
     writePermission: PERMISSIONS.usersWrite,
+    searchKeys: ['name', 'firstName', 'lastName', 'status'],
     hooks: {
       useList: useUsersList,
       useTrashedList: useUsersTrashedList,
