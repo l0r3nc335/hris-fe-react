@@ -1,3 +1,4 @@
+import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   Breadcrumb,
@@ -19,16 +20,18 @@ export function AppBreadcrumbs(): React.JSX.Element {
         {meta.breadcrumbs.map((crumb, index) => {
           const isLast = index === meta.breadcrumbs.length - 1
           return (
-            <BreadcrumbItem key={`${crumb.label}-${index}`}>
+            <React.Fragment key={`${crumb.label}-${index}`}>
               {index > 0 ? <BreadcrumbSeparator /> : null}
-              {isLast || !crumb.path ? (
-                <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-              ) : (
-                <BreadcrumbLink asChild>
-                  <Link to={crumb.path}>{crumb.label}</Link>
-                </BreadcrumbLink>
-              )}
-            </BreadcrumbItem>
+              <BreadcrumbItem>
+                {isLast || !crumb.path ? (
+                  <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                ) : (
+                  <BreadcrumbLink asChild>
+                    <Link to={crumb.path}>{crumb.label}</Link>
+                  </BreadcrumbLink>
+                )}
+              </BreadcrumbItem>
+            </React.Fragment>
           )
         })}
       </BreadcrumbList>
