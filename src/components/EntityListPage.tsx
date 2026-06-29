@@ -68,6 +68,8 @@ export interface EntityListPageProps {
   clientSideFilter?: boolean
   /** Rendered below the page title and above the list card. */
   headerContent?: React.ReactNode
+  /** When true, toolbar search/status filter apply client-side even when server pagination is used. */
+  clientSideToolbarFilter?: boolean
   /** Hide toolbar search input and status filter. */
   hideToolbarSearch?: boolean
   /** When true, omit the default Name column (use extraColumns for row labels). */
@@ -217,12 +219,13 @@ export function EntityListPage({
   clientSideFilter = false,
   headerContent,
   hideToolbarSearch = false,
+  clientSideToolbarFilter = false,
   hideNameColumn = false,
   clientSideSort = false,
 }: EntityListPageProps): React.JSX.Element {
   const trashedView = isTrashedView || showDeleted
   const serverPaginated = total !== undefined && !clientSideFilter
-  const filterOnClient = clientSideFilter || !serverPaginated
+  const filterOnClient = clientSideFilter || clientSideToolbarFilter || !serverPaginated
   const [localSearchQuery, setLocalSearchQuery] = useState('')
   const [localStatusFilter, setLocalStatusFilter] = useState('all')
   const [sortState, setSortState] = useState<SortState | null>(null)

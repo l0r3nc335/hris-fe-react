@@ -59,6 +59,8 @@ export interface UseEntityCrudPageConfig {
   clientSideFilter?: boolean
   /** When provided, external list/search state replaces internal list fetching. */
   listSource?: EntityListSourceOverride
+  showDeleted?: boolean
+  onShowDeletedChange?: (show: boolean) => void
   hooks: EntityCrudHooks | (Pick<EntityCrudHooks, 'useList'> & Partial<Omit<EntityCrudHooks, 'useList'>>)
 }
 
@@ -96,12 +98,18 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
     searchKeys,
     clientSideFilter = true,
     listSource,
+    showDeleted: showDeletedProp,
+    onShowDeletedChange: onShowDeletedChangeProp,
   } = config
   const [showDeletedInternal, setShowDeletedInternal] = useState(false)
   const [pageInternal, setPageInternal] = useState(1)
   const [limitInternal, setLimitInternal] = useState(20)
-  const showDeleted = listSource?.showDeleted ?? showDeletedInternal
-  const setShowDeleted = listSource?.onShowDeletedChange ?? setShowDeletedInternal
+  const showDeleted =
+    listSource?.showDeleted ?? showDeletedProp ?? showDeletedInternal
+  const setShowDeleted =
+    listSource?.onShowDeletedChange ??
+    onShowDeletedChangeProp ??
+    setShowDeletedInternal
   const page = listSource?.page ?? pageInternal
   const setPage = listSource?.onPageChange ?? setPageInternal
   const limit = listSource?.limit ?? limitInternal
@@ -141,7 +149,12 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
 
   useEffect(() => {
     setPage(1)
-  }, [searchQuery, statusFilter, showDeleted])
+  }, [showDeleted])
+
+  useEffect(() => {
+    if (clientSideFilter && listSource) return
+    setPage(1)
+  }, [searchQuery, statusFilter, clientSideFilter, listSource])
 
   const items = listSource
     ? listSource.items

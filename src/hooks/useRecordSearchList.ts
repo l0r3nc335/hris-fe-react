@@ -31,19 +31,35 @@ export interface UseRecordSearchListConfig<T extends { id: string }> {
     options: { trashed?: boolean },
   ) => Promise<Paginated<T>>
   queryKeyPrefix: readonly unknown[]
+  /** When false, only BE search queries run; default list fetching is skipped. */
+  fetchDefaultList?: boolean
+  showDeleted?: boolean
+  onShowDeletedChange?: (show: boolean) => void
 }
 
 export interface UseRecordSearchListResult<T extends { id: string }> {
   listSource: RecordSearchListSource<T>
   searchPanelProps: RecordSearchPanelProps
+  isSearchActive: boolean
 }
 
 export function useRecordSearchList<T extends { id: string }>(
   config: UseRecordSearchListConfig<T>,
 ): UseRecordSearchListResult<T> {
-  const { fields, listFn, trashedListFn, searchFn, queryKeyPrefix } = config
+  const {
+    fields,
+    listFn,
+    trashedListFn,
+    searchFn,
+    queryKeyPrefix,
+    fetchDefaultList = true,
+    showDeleted: showDeletedProp,
+    onShowDeletedChange,
+  } = config
 
-  const [showDeleted, setShowDeleted] = useState(false)
+  const [showDeletedInternal, setShowDeletedInternal] = useState(false)
+  const showDeleted = showDeletedProp ?? showDeletedInternal
+  const setShowDeleted = onShowDeletedChange ?? setShowDeletedInternal
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(20)
   const [draftValues, setDraftValues] = useState<SearchFormValues>(() =>
@@ -60,7 +76,7 @@ export function useRecordSearchList<T extends { id: string }>(
   const defaultQuery = useQuery({
     queryKey: [...queryKeyPrefix, 'list', showDeleted, listParams],
     queryFn: () => (showDeleted ? trashedListFn(listParams) : listFn(listParams)),
-    enabled: !searchActive,
+    enabled: fetchDefaultList && !searchActive,
   })
 
   const searchQuery = useQuery({
@@ -123,5 +139,6 @@ export function useRecordSearchList<T extends { id: string }>(
       onShowDeletedChange: setShowDeleted,
     },
     searchPanelProps,
+    isSearchActive: searchActive,
   }
 }

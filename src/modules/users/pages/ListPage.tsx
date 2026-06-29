@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { EntityListPage } from '@/components/EntityListPage'
 import { EntityFormDialog } from '@/components/EntityFormDialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
@@ -14,17 +15,24 @@ import {
   useSoftDeleteUser,
   useRestoreUser,
   useRemoveUser,
+  useUsersList,
+  useUsersTrashedList,
 } from '../hooks'
 import { USER_SEARCH_FIELDS } from '../searchFields'
 import { USER_LIST_COLUMNS } from '../listColumns'
 
 export function UsersListPage(): React.JSX.Element {
+  const [showDeleted, setShowDeleted] = useState(false)
+
   const recordSearch = useRecordSearchList({
     fields: USER_SEARCH_FIELDS,
     listFn: usersApi.list,
     trashedListFn: usersApi.listTrashed,
     searchFn: searchUsers,
     queryKeyPrefix: queryKeys.users.all,
+    fetchDefaultList: false,
+    showDeleted,
+    onShowDeletedChange: setShowDeleted,
   })
 
   const crud = useEntityCrudPage({
@@ -36,11 +44,13 @@ export function UsersListPage(): React.JSX.Element {
     formFields: [EMAIL_FIELD],
     createPermission: PERMISSIONS.usersWrite,
     writePermission: PERMISSIONS.usersWrite,
-    clientSideFilter: false,
-    listSource: recordSearch.listSource,
+    clientSideFilter: !recordSearch.isSearchActive,
+    showDeleted,
+    onShowDeletedChange: setShowDeleted,
+    listSource: recordSearch.isSearchActive ? recordSearch.listSource : undefined,
     hooks: {
-      useList: () => ({ data: undefined, meta: undefined, isLoading: false }),
-      useTrashedList: () => ({ data: undefined, meta: undefined, isLoading: false }),
+      useList: useUsersList,
+      useTrashedList: useUsersTrashedList,
       useCreate: useCreateUser,
       useUpdate: useUpdateUser,
       useSoftDelete: useSoftDeleteUser,
@@ -54,9 +64,9 @@ export function UsersListPage(): React.JSX.Element {
       <EntityListPage
         {...crud.listPageProps}
         headerContent={<RecordSearchPanel {...recordSearch.searchPanelProps} />}
-        hideToolbarSearch
-        hideNameColumn
+        clientSideToolbarFilter={recordSearch.isSearchActive}
         clientSideSort
+        hideNameColumn
         extraColumns={USER_LIST_COLUMNS}
         searchKeys={['firstName', 'lastName', 'email', 'role', 'status']}
       />
