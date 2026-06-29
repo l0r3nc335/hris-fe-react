@@ -112,6 +112,13 @@ export function RecordSearchPanel({
         </CardHeader>
         <CollapsibleContent>
           <CardContent className="space-y-4 pt-0">
+            <form
+              className="space-y-4"
+              onSubmit={(event) => {
+                event.preventDefault()
+                onSearch()
+              }}
+            >
             <div className="grid gap-4 sm:grid-cols-2">
               {fields.map((field) => (
                 <SearchField
@@ -123,13 +130,14 @@ export function RecordSearchPanel({
               ))}
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button onClick={onSearch} disabled={isSearching}>
+              <Button type="submit" disabled={isSearching}>
                 {isSearching ? 'Searching…' : 'Search'}
               </Button>
-              <Button variant="outline" onClick={onClear} disabled={isSearching}>
+              <Button type="button" variant="outline" onClick={onClear} disabled={isSearching}>
                 Clear
               </Button>
             </div>
+            </form>
           </CardContent>
         </CollapsibleContent>
       </Card>

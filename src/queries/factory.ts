@@ -32,6 +32,10 @@ export interface PaginatedListQueryResult<T> {
   isLoading: boolean
 }
 
+export interface PaginatedListQueryOptions {
+  enabled?: boolean
+}
+
 export function createListQueryOptions<T>(
   queryKey: QueryKey,
   listFn: () => Promise<T[]>,
@@ -50,10 +54,12 @@ export function usePaginatedListQuery<T>(
   queryKey: QueryKey,
   listFn: (params?: ListQueryParams) => Promise<Paginated<T>>,
   params?: ListQueryParams,
+  options?: PaginatedListQueryOptions,
 ): PaginatedListQueryResult<T> {
   const query = useQuery({
     queryKey: [...(Array.isArray(queryKey) ? queryKey : [queryKey]), params],
     queryFn: () => listFn(params),
+    enabled: options?.enabled ?? true,
   })
 
   return {
@@ -195,10 +201,15 @@ export function createResourceQueryHooks<T extends { id: string; status: string 
   api: MutableResourceApi<T>,
 ) {
   return {
-    useList: (params?: ListQueryParams) =>
-      usePaginatedListQuery([...keys.list(), params], () => api.list(params)),
-    useTrashedList: (params?: ListQueryParams) =>
-      usePaginatedListQuery([...keys.trashed(), params], () => api.listTrashed(params)),
+    useList: (params?: ListQueryParams, options?: PaginatedListQueryOptions) =>
+      usePaginatedListQuery([...keys.list(), params], () => api.list(params), params, options),
+    useTrashedList: (params?: ListQueryParams, options?: PaginatedListQueryOptions) =>
+      usePaginatedListQuery(
+        [...keys.trashed(), params],
+        () => api.listTrashed(params),
+        params,
+        options,
+      ),
     useCreate: () => useCreateMutation(keys.all, keys.list(), api),
     useUpdate: () => useUpdateMutation(keys.all, api),
     useSoftDelete: () => useSoftDeleteMutation(keys.all, api.softDelete),

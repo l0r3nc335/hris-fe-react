@@ -24,6 +24,7 @@ import { USER_LIST_COLUMNS } from '../listColumns'
 export function UsersListPage(): React.JSX.Element {
   const [showDeleted, setShowDeleted] = useState(false)
 
+  // "Search records" collapsible — POSTs non-empty field values to /users/search.
   const recordSearch = useRecordSearchList({
     fields: USER_SEARCH_FIELDS,
     listFn: usersApi.list,
@@ -35,6 +36,9 @@ export function UsersListPage(): React.JSX.Element {
     onShowDeletedChange: setShowDeleted,
   })
 
+  const beSearchActive = recordSearch.isSearchActive
+
+  // Default table data from list API; BE search results replace rows when panel search is active.
   const crud = useEntityCrudPage({
     title: 'Users',
     description: 'Manage user accounts',
@@ -44,10 +48,10 @@ export function UsersListPage(): React.JSX.Element {
     formFields: [EMAIL_FIELD],
     createPermission: PERMISSIONS.usersWrite,
     writePermission: PERMISSIONS.usersWrite,
-    clientSideFilter: !recordSearch.isSearchActive,
+    clientSideFilter: !beSearchActive,
     showDeleted,
     onShowDeletedChange: setShowDeleted,
-    listSource: recordSearch.isSearchActive ? recordSearch.listSource : undefined,
+    listSource: beSearchActive ? recordSearch.listSource : undefined,
     hooks: {
       useList: useUsersList,
       useTrashedList: useUsersTrashedList,
@@ -64,7 +68,6 @@ export function UsersListPage(): React.JSX.Element {
       <EntityListPage
         {...crud.listPageProps}
         headerContent={<RecordSearchPanel {...recordSearch.searchPanelProps} />}
-        clientSideToolbarFilter={recordSearch.isSearchActive}
         clientSideSort
         hideNameColumn
         extraColumns={USER_LIST_COLUMNS}

@@ -21,8 +21,14 @@ interface MutationHookResult<TVariables> {
 }
 
 export interface EntityCrudHooks {
-  useList: (params?: ListQueryParams) => PaginatedListQueryResult<EntityListItem>
-  useTrashedList: (params?: ListQueryParams) => PaginatedListQueryResult<EntityListItem>
+  useList: (
+    params?: ListQueryParams,
+    options?: { enabled?: boolean },
+  ) => PaginatedListQueryResult<EntityListItem>
+  useTrashedList: (
+    params?: ListQueryParams,
+    options?: { enabled?: boolean },
+  ) => PaginatedListQueryResult<EntityListItem>
   useCreate: () => MutationHookResult<CreateBody>
   useUpdate: () => MutationHookResult<{ id: string; body: UpdateBody }>
   useSoftDelete: () => MutationHookResult<string>
@@ -55,7 +61,7 @@ export interface UseEntityCrudPageConfig {
   createPermission?: Permission
   writePermission?: Permission
   searchKeys?: string[]
-  /** When true (default), search and status filter run in the browser; show-deleted still uses the API. */
+  /** When true (default), pagination slices rows in the browser; toolbar search is always client-side. */
   clientSideFilter?: boolean
   /** When provided, external list/search state replaces internal list fetching. */
   listSource?: EntityListSourceOverride
@@ -126,21 +132,16 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
 
   const listParams: ListQueryParams = clientSideFilter
     ? { page: 1, limit: 100 }
-    : {
-        page,
-        limit,
-        q: searchQuery.trim() || undefined,
-        status: statusFilter,
-      }
+    : { page, limit }
 
-  const activeQuery = listSource ? null : config.hooks.useList(listParams)
-  const trashedQuery = listSource
-    ? null
-    : (config.hooks.useTrashedList?.(listParams) ?? {
-        data: undefined,
-        meta: undefined,
-        isLoading: false,
-      })
+  const listQueryOptions = { enabled: !listSource }
+
+  const activeQuery = config.hooks.useList(listParams, listQueryOptions)
+  const trashedQuery = config.hooks.useTrashedList?.(listParams, listQueryOptions) ?? {
+    data: undefined,
+    meta: undefined,
+    isLoading: false,
+  }
   const createMutation = config.hooks.useCreate?.() ?? { mutate: () => undefined, isPending: false }
   const updateMutation = config.hooks.useUpdate?.() ?? { mutate: () => undefined, isPending: false }
   const softDeleteMutation = config.hooks.useSoftDelete?.() ?? { mutate: () => undefined, isPending: false }
@@ -152,23 +153,23 @@ export function useEntityCrudPage(config: UseEntityCrudPageConfig): UseEntityCru
   }, [showDeleted])
 
   useEffect(() => {
-    if (clientSideFilter && listSource) return
+    if (!clientSideFilter) return
     setPage(1)
-  }, [searchQuery, statusFilter, clientSideFilter, listSource])
+  }, [searchQuery, statusFilter, clientSideFilter])
 
   const items = listSource
     ? listSource.items
-    : ((showDeleted ? trashedQuery!.data : activeQuery!.data) ?? [])
+    : ((showDeleted ? trashedQuery.data : activeQuery.data) ?? [])
   const isLoading = listSource
     ? listSource.isLoading
     : showDeleted
-      ? trashedQuery!.isLoading
-      : activeQuery!.isLoading
+      ? trashedQuery.isLoading
+      : activeQuery.isLoading
   const apiTotal = listSource
     ? listSource.total
     : showDeleted
-      ? (trashedQuery!.meta?.total ?? 0)
-      : (activeQuery!.meta?.total ?? 0)
+      ? (trashedQuery.meta?.total ?? 0)
+      : (activeQuery.meta?.total ?? 0)
 
   const openCreate = (): void => {
     setFormMode('create')

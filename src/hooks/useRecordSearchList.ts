@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { RecordSearchPanelProps } from '@/components/RecordSearchPanel'
 import type { ListQueryParams } from '@/services/api/client'
 import type { Paginated } from '@/types/api'
@@ -43,6 +43,16 @@ export interface UseRecordSearchListResult<T extends { id: string }> {
   isSearchActive: boolean
 }
 
+function buildSearchQueryKey(
+  queryKeyPrefix: readonly unknown[],
+  criteria: Record<string, string | number | boolean>,
+  showDeleted: boolean,
+  page: number,
+  limit: number,
+): readonly unknown[] {
+  return [...queryKeyPrefix, 'search', criteria, showDeleted, page, limit]
+}
+
 export function useRecordSearchList<T extends { id: string }>(
   config: UseRecordSearchListConfig<T>,
 ): UseRecordSearchListResult<T> {
@@ -57,6 +67,7 @@ export function useRecordSearchList<T extends { id: string }>(
     onShowDeletedChange,
   } = config
 
+  const queryClient = useQueryClient()
   const [showDeletedInternal, setShowDeletedInternal] = useState(false)
   const showDeleted = showDeletedProp ?? showDeletedInternal
   const setShowDeleted = onShowDeletedChange ?? setShowDeletedInternal
@@ -80,20 +91,29 @@ export function useRecordSearchList<T extends { id: string }>(
   })
 
   const searchQuery = useQuery({
-    queryKey: [...queryKeyPrefix, 'search', submittedCriteria, showDeleted, page, limit],
+    queryKey: buildSearchQueryKey(
+      queryKeyPrefix,
+      submittedCriteria ?? {},
+      showDeleted,
+      page,
+      limit,
+    ),
     queryFn: () =>
-      searchFn({ ...submittedCriteria, page, limit }, { trashed: showDeleted }),
+      searchFn(
+        { ...(submittedCriteria ?? {}), page, limit },
+        { trashed: showDeleted },
+      ),
     enabled: searchActive && submittedCriteria !== null,
   })
 
   useEffect(() => {
     setPage(1)
-  }, [showDeleted, searchActive, submittedCriteria])
+  }, [showDeleted])
 
   const activeQuery = searchActive ? searchQuery : defaultQuery
 
   const items = activeQuery.data?.data ?? []
-  const isLoading = activeQuery.isLoading
+  const isLoading = activeQuery.isFetching
   const total = activeQuery.data?.meta.total ?? 0
 
   const handleChange = (key: string, value: string): void => {
@@ -102,9 +122,16 @@ export function useRecordSearchList<T extends { id: string }>(
 
   const handleSearch = (): void => {
     const payload = buildSearchPayload(draftValues, fields)
+    const nextPage = 1
+
     setSubmittedCriteria(payload)
     setSearchActive(true)
-    setPage(1)
+    setPage(nextPage)
+
+    void queryClient.fetchQuery({
+      queryKey: buildSearchQueryKey(queryKeyPrefix, payload, showDeleted, nextPage, limit),
+      queryFn: () => searchFn({ ...payload, page: nextPage, limit }, { trashed: showDeleted }),
+    })
   }
 
   const handleClear = (): void => {
@@ -112,6 +139,7 @@ export function useRecordSearchList<T extends { id: string }>(
     setSubmittedCriteria(null)
     setSearchActive(false)
     setPage(1)
+    queryClient.removeQueries({ queryKey: [...queryKeyPrefix, 'search'] })
   }
 
   const searchPanelProps: RecordSearchPanelProps = {

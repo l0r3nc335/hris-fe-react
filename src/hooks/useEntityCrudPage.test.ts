@@ -69,6 +69,52 @@ describe('useEntityCrudPage', () => {
     expect(result.current.formDialogProps.title).toBe('Create employee')
   })
 
+  it('keeps hook order stable when listSource is toggled', () => {
+    const useList = vi.fn(() => ({
+      data: mockListItems,
+      meta: { page: 1, limit: 20, total: mockListItems.length },
+      isLoading: false,
+    }))
+    const useTrashedList = vi.fn(() => ({
+      data: [],
+      meta: { page: 1, limit: 20, total: 0 },
+      isLoading: false,
+    }))
+    const listSource = {
+      items: [{ id: 'search-1', name: 'Search Hit', status: 'active' }],
+      isLoading: false,
+      total: 1,
+      page: 1,
+      limit: 20,
+      showDeleted: false,
+      onPageChange: vi.fn(),
+      onLimitChange: vi.fn(),
+      onShowDeletedChange: vi.fn(),
+    }
+
+    const { result, rerender } = renderHook(
+      ({ withListSource }) =>
+        useEntityCrudPage({
+          title: 'Users',
+          description: 'Manage users',
+          emptyTitle: 'No users found',
+          entitySingular: 'user',
+          clientSideFilter: !withListSource,
+          listSource: withListSource ? listSource : undefined,
+          hooks: createHooks({ useList, useTrashedList }),
+        }),
+      { initialProps: { withListSource: false } },
+    )
+
+    expect(result.current.listPageProps.items).toEqual(mockListItems)
+    expect(useList).toHaveBeenCalled()
+
+    rerender({ withListSource: true })
+
+    expect(result.current.listPageProps.items).toEqual(listSource.items)
+    expect(useList).toHaveBeenCalledWith(expect.anything(), { enabled: false })
+  })
+
   it('populates split name fields from display name when editing', () => {
     const { result } = renderHook(() =>
       useEntityCrudPage({
