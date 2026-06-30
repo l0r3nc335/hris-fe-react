@@ -166,7 +166,7 @@ export function AppSidebar({
         </div>
       </div>
       <ScrollArea className="flex-1">
-        <nav className="space-y-1 p-2">
+        <nav className="space-y-1 p-2 h-5">
           {filteredGroups.map((group) => {
             const isExpanded = expandedGroups.includes(group.id)
             return (

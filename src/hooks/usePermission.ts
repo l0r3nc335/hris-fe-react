@@ -3,7 +3,8 @@ import { useAppSelector } from '@/hooks'
 import { selectUser } from '@/slices/authSlice'
 import type { Permission } from '@/constants/permissions'
 
-export function usePermission(): { can: (permission: Permission) => boolean; permissions: string[] } {
+export function usePermission(): { can: (permission: Permission) => boolean; permissions: string[] } 
+{
   const user = useAppSelector(selectUser)
   const permissions = user?.permissions ?? []
 
