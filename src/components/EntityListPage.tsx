@@ -338,7 +338,7 @@ export function EntityListPage({
         />
       </CardHeader>
       <CardContent>
-        {isLoading ? (
+        {isLoading ?  (
           <TableSkeleton />
         ) : filteredItems.length === 0 ? (
           <EmptyState title={emptyTitle} />

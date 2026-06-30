@@ -60,7 +60,7 @@ export function AppHeader(): React.JSX.Element {
           </Sheet>
           <div className="hidden min-w-0 flex-col md:flex">
             <span className="truncate text-sm font-medium">{meta.title}</span>
-            <AppBreadcrumbs />
+            {/*<AppBreadcrumbs />*/}
           </div>
         </div>
         <div className="flex items-center gap-1">

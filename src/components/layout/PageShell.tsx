@@ -23,11 +23,8 @@ export function PageShell({
   return (
     <div className="flex min-h-full flex-col">
       <div className="flex-1 space-y-4">
-        {showBreadcrumbs ? (
-          <div className="md:hidden">
-            <AppBreadcrumbs />
-          </div>
-        ) : null}
+        
+        <AppBreadcrumbs />
         {title || description || toolbar ? (
           <PageHeader title={title ?? ''} description={description} action={toolbar} />
         ) : null}
