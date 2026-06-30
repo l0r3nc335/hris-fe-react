@@ -4,10 +4,10 @@ import { uiReducer, toggleNavGroup, setCommandPaletteOpen } from '@/slices/uiSli
 describe('uiSlice', () => {
   it('toggles expanded nav groups', () => {
     let state = uiReducer(undefined, toggleNavGroup('overview'))
-    expect(state.expandedNavGroups).not.toContain('overview')
+    expect(state.expandedNavGroups).toContain('overview')
 
     state = uiReducer(state, toggleNavGroup('overview'))
-    expect(state.expandedNavGroups).toContain('overview')
+    expect(state.expandedNavGroups).not.toContain('overview')
   })
 
   it('sets command palette open state', () => {

@@ -1,8 +1,8 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { ChevronDown, PanelLeftClose, PanelLeftOpen, Search, Settings } from 'lucide-react'
 import { useAppDispatch, useAppSelector } from '@/hooks'
 import { setSidebarSearchQuery, toggleNavGroup, toggleSidebar } from '@/slices/uiSlice'
-import { NAV_GROUPS, type NavItem } from '@/constants/navigation'
+import { NAV_GROUPS, navGroupContainsPath, type NavItem } from '@/constants/navigation'
 import { usePermission } from '@/hooks/usePermission'
 import { ROUTES } from '@/constants/routes'
 import { cn } from '@/utils/cn'
@@ -69,6 +69,7 @@ export function AppSidebar({
   collapsed = false,
 }: AppSidebarProps): React.JSX.Element {
   const dispatch = useAppDispatch()
+  const { pathname } = useLocation()
   const expandedGroups = useAppSelector((s) => s.ui.expandedNavGroups)
   const searchQuery = useAppSelector((s) => s.ui.sidebarSearchQuery)
   const { can } = usePermission()
@@ -166,14 +167,21 @@ export function AppSidebar({
         </div>
       </div>
       <ScrollArea className="flex-1">
-        <nav className="space-y-1 p-2 h-5">
+        <nav className="space-y-1 p-2 h-10">
           {filteredGroups.map((group) => {
-            const isExpanded = expandedGroups.includes(group.id)
+            const isRouteActive = navGroupContainsPath(group, pathname)
+            const isManuallyExpanded = expandedGroups.includes(group.id)
+            const isExpanded =
+              normalizedQuery.length > 0 || isRouteActive || isManuallyExpanded
             return (
               <Collapsible
                 key={group.id}
                 open={isExpanded}
-                onOpenChange={() => dispatch(toggleNavGroup(group.id))}
+                onOpenChange={(open) => {
+                  if (open !== isManuallyExpanded) {
+                    dispatch(toggleNavGroup(group.id))
+                  }
+                }}
               >
                 <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase hover:bg-accent/50">
                   {group.label}
