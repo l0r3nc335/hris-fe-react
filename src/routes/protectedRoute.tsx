@@ -1,10 +1,13 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { Suspense } from 'react'
 import { useAppSelector } from '@/hooks'
 import { selectAuthStatus, selectIsAuthenticated } from '@/slices/authSlice'
 import { usePermission } from '@/hooks/usePermission'
 import type { Permission } from '@/constants/permissions'
 import { isKnownRoute, ROUTES } from '@/constants/routes'
 import { PublicNotFoundShell } from '@/layouts/PublicNotFoundShell'
+import { PageLoader } from '@/components/PageLoader'
+import { NotFoundPage } from '@/routes/lazyRoutes'
 
 export interface ProtectedRouteProps {
   permissions?: Permission[]
@@ -26,7 +29,11 @@ export function ProtectedRoute({
     return <PublicNotFoundShell />
   }
   if (permissions?.length && !permissions.some((p) => can(p))) {
-    return <Navigate to={ROUTES.home} replace />
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <NotFoundPage />
+      </Suspense>
+    )
   }
   return <Outlet />
 }

@@ -6,8 +6,9 @@ import { PublicLayout } from '@/layouts/PublicLayout'
 import { RootLayout } from '@/layouts/RootLayout'
 import { ProtectedRoute } from '@/routes/protectedRoute'
 import { PageLoader } from '@/components/PageLoader'
+import { lazyRouteElement } from '@/routes/lazyRouteElement'
+import { ROUTE_SEGMENT_PERMISSIONS } from '@/constants/routePermissions'
 import { ROUTES } from '@/constants/routes'
-import { PERMISSIONS } from '@/constants/permissions'
 import * as Lazy from './lazyRoutes'
 
 interface SuspenseWrapProps {
@@ -16,6 +17,16 @@ interface SuspenseWrapProps {
 
 function SuspenseWrap({ children }: SuspenseWrapProps): React.JSX.Element {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>
+}
+
+function dashboardRoute(
+  path: string,
+  page: Parameters<typeof lazyRouteElement>[0],
+): { path: string; element: ReactNode } {
+  return {
+    path,
+    element: lazyRouteElement(page, ROUTE_SEGMENT_PERMISSIONS[path]),
+  }
 }
 
 export const router = createBrowserRouter([
@@ -56,42 +67,36 @@ export const router = createBrowserRouter([
           {
             element: <DashboardLayout />,
             children: [
-              { path: 'dashboard', element: <SuspenseWrap><Lazy.DashboardPage /></SuspenseWrap> },
-              { path: 'users', element: <SuspenseWrap><Lazy.UsersListPage /></SuspenseWrap> },
-              { path: 'employees', element: <SuspenseWrap><Lazy.EmployeesListPage /></SuspenseWrap> },
-              { path: 'employee-departments', element: <SuspenseWrap><Lazy.EmployeeDepartmentsListPage /></SuspenseWrap> },
-              { path: 'departments', element: <SuspenseWrap><Lazy.DepartmentsListPage /></SuspenseWrap> },
-              { path: 'positions', element: <SuspenseWrap><Lazy.PositionsListPage /></SuspenseWrap> },
-              { path: 'attendance', element: <SuspenseWrap><Lazy.AttendanceListPage /></SuspenseWrap> },
-              { path: 'leave', element: <SuspenseWrap><Lazy.LeaveListPage /></SuspenseWrap> },
-              { path: 'payroll', element: <SuspenseWrap><Lazy.PayrollListPage /></SuspenseWrap> },
-              { path: 'compensation', element: <SuspenseWrap><Lazy.CompensationListPage /></SuspenseWrap> },
-              { path: 'time-tracking', element: <SuspenseWrap><Lazy.TimeTrackingListPage /></SuspenseWrap> },
-              { path: 'recruitment', element: <SuspenseWrap><Lazy.RecruitmentListPage /></SuspenseWrap> },
-              { path: 'interviews', element: <SuspenseWrap><Lazy.InterviewsListPage /></SuspenseWrap> },
-              { path: 'performance', element: <SuspenseWrap><Lazy.PerformanceListPage /></SuspenseWrap> },
-              { path: 'org-chart', element: <SuspenseWrap><Lazy.OrganizationListPage /></SuspenseWrap> },
-              { path: 'documents', element: <SuspenseWrap><Lazy.DocumentsListPage /></SuspenseWrap> },
-              { path: 'notifications', element: <SuspenseWrap><Lazy.NotificationsListPage /></SuspenseWrap> },
-              { path: 'roles', element: <SuspenseWrap><Lazy.RolesListPage /></SuspenseWrap> },
-              { path: 'permissions', element: <SuspenseWrap><Lazy.PermissionsListPage /></SuspenseWrap> },
-              { path: 'audit-logs', element: <SuspenseWrap><Lazy.AuditListPage /></SuspenseWrap> },
-              { path: 'reports', element: <SuspenseWrap><Lazy.ReportsListPage /></SuspenseWrap> },
-              { path: 'analytics', element: <SuspenseWrap><Lazy.AnalyticsListPage /></SuspenseWrap> },
-              { path: 'settings', element: <SuspenseWrap><Lazy.SettingsListPage /></SuspenseWrap> },
-              { path: 'tenants', element: <ProtectedRoute permissions={[PERMISSIONS.tenantsManage]} />, children: [
-                { index: true, element: <SuspenseWrap><Lazy.TenantsListPage /></SuspenseWrap> },
-              ] },
-              { path: 'billing', element: <ProtectedRoute permissions={[PERMISSIONS.billingRead]} />, children: [
-                { index: true, element: <SuspenseWrap><Lazy.BillingListPage /></SuspenseWrap> },
-              ] },
-              { path: 'admin/health', element: <ProtectedRoute permissions={[PERMISSIONS.tenantsManage]} />, children: [
-                { index: true, element: <SuspenseWrap><Lazy.SystemListPage /></SuspenseWrap> },
-              ] },
-              { path: 'onboarding', element: <SuspenseWrap><Lazy.OnboardingListPage /></SuspenseWrap> },
-              { path: 'benefits', element: <SuspenseWrap><Lazy.BenefitsListPage /></SuspenseWrap> },
-              { path: 'training', element: <SuspenseWrap><Lazy.TrainingListPage /></SuspenseWrap> },
-              { path: '*', element: <SuspenseWrap><Lazy.NotFoundPage /></SuspenseWrap> },
+              { path: 'dashboard', element: lazyRouteElement(Lazy.DashboardPage) },
+              dashboardRoute('users', Lazy.UsersListPage),
+              dashboardRoute('employees', Lazy.EmployeesListPage),
+              dashboardRoute('employee-departments', Lazy.EmployeeDepartmentsListPage),
+              dashboardRoute('departments', Lazy.DepartmentsListPage),
+              { path: 'positions', element: lazyRouteElement(Lazy.PositionsListPage) },
+              { path: 'attendance', element: lazyRouteElement(Lazy.AttendanceListPage) },
+              { path: 'leave', element: lazyRouteElement(Lazy.LeaveListPage) },
+              dashboardRoute('payroll', Lazy.PayrollListPage),
+              { path: 'compensation', element: lazyRouteElement(Lazy.CompensationListPage) },
+              { path: 'time-tracking', element: lazyRouteElement(Lazy.TimeTrackingListPage) },
+              { path: 'recruitment', element: lazyRouteElement(Lazy.RecruitmentListPage) },
+              { path: 'interviews', element: lazyRouteElement(Lazy.InterviewsListPage) },
+              { path: 'performance', element: lazyRouteElement(Lazy.PerformanceListPage) },
+              { path: 'org-chart', element: lazyRouteElement(Lazy.OrganizationListPage) },
+              { path: 'documents', element: lazyRouteElement(Lazy.DocumentsListPage) },
+              { path: 'notifications', element: lazyRouteElement(Lazy.NotificationsListPage) },
+              dashboardRoute('roles', Lazy.RolesListPage),
+              dashboardRoute('permissions', Lazy.PermissionsListPage),
+              dashboardRoute('audit-logs', Lazy.AuditListPage),
+              dashboardRoute('reports', Lazy.ReportsListPage),
+              { path: 'analytics', element: lazyRouteElement(Lazy.AnalyticsListPage) },
+              dashboardRoute('settings', Lazy.SettingsListPage),
+              dashboardRoute('tenants', Lazy.TenantsListPage),
+              dashboardRoute('billing', Lazy.BillingListPage),
+              dashboardRoute('admin/health', Lazy.SystemListPage),
+              { path: 'onboarding', element: lazyRouteElement(Lazy.OnboardingListPage) },
+              { path: 'benefits', element: lazyRouteElement(Lazy.BenefitsListPage) },
+              { path: 'training', element: lazyRouteElement(Lazy.TrainingListPage) },
+              { path: '*', element: lazyRouteElement(Lazy.NotFoundPage) },
             ],
           },
         ],
