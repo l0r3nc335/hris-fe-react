@@ -95,6 +95,7 @@ const NO_REFRESH_RETRY_PATHS = [
   endpoints.auth.register,
   endpoints.auth.forgotPassword,
   endpoints.auth.resetPassword,
+  endpoints.auth.verifyEmail,
   endpoints.auth.logout,
 ]
 

@@ -39,7 +39,15 @@ export const router = createBrowserRouter([
           { path: 'register', element: <SuspenseWrap><Lazy.RegisterPage /></SuspenseWrap> },
           { path: 'forgot-password', element: <SuspenseWrap><Lazy.ForgotPasswordPage /></SuspenseWrap> },
           { path: 'reset-password', element: <SuspenseWrap><Lazy.ResetPasswordPage /></SuspenseWrap> },
+          { path: 'verify-email', element: <SuspenseWrap><Lazy.VerifyEmailPage /></SuspenseWrap> },
           { path: '*', element: <SuspenseWrap><Lazy.NotFoundPage /></SuspenseWrap> },
+        ],
+      },
+      {
+        path: '/verify',
+        element: <AuthLayout />,
+        children: [
+          { index: true, element: <SuspenseWrap><Lazy.VerifyEmailPage /></SuspenseWrap> },
         ],
       },
       {

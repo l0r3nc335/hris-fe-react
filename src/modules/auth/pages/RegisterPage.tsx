@@ -34,7 +34,7 @@ export function RegisterPage(): React.JSX.Element {
     const { confirmPassword: _, ...payload } = data
     void registerApi(payload)
       .then(() => {
-        navigate(ROUTES.login)
+        navigate(ROUTES.verifyEmail, { state: { email: payload.email } })
       })
       .catch(() => {
         setError('Registration failed. Please try again.')
