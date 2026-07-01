@@ -26,9 +26,22 @@ describe('auth schemas', () => {
       lastName: 'Doe',
       email: 'jane@hris.com',
       password: 'secret12',
+      confirmPassword: 'secret12',
     })
 
     expect(result.success).toBe(true)
+  })
+
+  it('rejects register payload when passwords do not match', () => {
+    const result = registerSchema.safeParse({
+      firstName: 'Jane',
+      lastName: 'Doe',
+      email: 'jane@hris.com',
+      password: 'secret12',
+      confirmPassword: 'different',
+    })
+
+    expect(result.success).toBe(false)
   })
 
   it('validates forgot password payload', () => {
