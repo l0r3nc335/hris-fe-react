@@ -1,14 +1,26 @@
 import { Outlet, Navigate } from 'react-router-dom'
 import { useAppSelector } from '@/hooks'
-import { selectAuthStatus, selectIsAuthenticated } from '@/slices/authSlice'
+import { PageLoader } from '@/components/PageLoader'
+import { selectAuthStatus, selectIsAuthenticated, selectUser } from '@/slices/authSlice'
 import { ROUTES } from '@/constants/routes'
 import { PublicNavbar } from '@/components/layout/PublicNavbar'
 
 export function AuthLayout(): React.JSX.Element {
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
+  const user = useAppSelector(selectUser)
   const status = useAppSelector(selectAuthStatus)
 
-  if (status === 'loading') return <></>
+  const isRestoringSession =
+    status === 'loading' || (isAuthenticated && user === null)
+
+  if (isRestoringSession) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <PageLoader />
+      </div>
+    )
+  }
+
   if (isAuthenticated) return <Navigate to={ROUTES.home} replace />
 
   return (

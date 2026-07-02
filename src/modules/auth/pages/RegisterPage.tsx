@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { register as registerApi } from '@/services/api/authApi'
+import { useAppSelector } from '@/hooks'
+import { selectIsAuthenticated } from '@/slices/authSlice'
 import { Button } from '@/ui'
 import { Input } from '@/ui'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -21,12 +23,15 @@ import { registerSchema, type RegisterFormData } from '../schemas'
 
 export function RegisterPage(): React.JSX.Element {
   const navigate = useNavigate()
+  const isAuthenticated = useAppSelector(selectIsAuthenticated)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: { firstName: '', lastName: '', email: '', password: '', confirmPassword: '' },
   })
+
+  if (isAuthenticated) return <Navigate to={ROUTES.home} replace />
 
   const onSubmit = (data: RegisterFormData): void => {
     setError(null)

@@ -1,8 +1,8 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/hooks'
-import { login, selectAuth } from '@/slices/authSlice'
+import { login, selectAuth, selectIsAuthenticated } from '@/slices/authSlice'
 import { Button } from '@/ui'
 import { Input } from '@/ui'
 import { Card, CardContent } from '@/components/ui/card'
@@ -21,11 +21,14 @@ import { loginSchema, type LoginFormData } from '../schemas'
 export function LoginPage(): React.JSX.Element {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const isAuthenticated = useAppSelector(selectIsAuthenticated)
   const { status, error } = useAppSelector(selectAuth)
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   })
+
+  if (isAuthenticated) return <Navigate to={ROUTES.home} replace />
 
   const onSubmit = (data: LoginFormData): void => {
     void dispatch(login(data))
