@@ -8,6 +8,7 @@ import { useFlatListQuery, usePaginatedListQuery } from './factory'
 import type { ListQueryParams } from '@/services/api/client'
 
 export * from './users/queries'
+export * from './subscriptions/queries'
 export * from './employees/queries'
 export * from './employeeDepartments/queries'
 export * from './departments/queries'

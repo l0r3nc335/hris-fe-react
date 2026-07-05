@@ -26,6 +26,16 @@ export const FEATURE_PAGES: FeaturePageDefinition[] = [
     load: () => import('@/modules/users/pages/ListPage').then((m) => ({ default: m.UsersListPage })),
   },
   {
+    slug: 'subscriptions',
+    path: '/subscriptions',
+    title: 'Subscriptions',
+    kind: 'crud',
+    load: () =>
+      import('@/modules/subscriptions/pages/ListPage').then((m) => ({
+        default: m.SubscriptionsListPage,
+      })),
+  },
+  {
     slug: 'employees',
     path: '/employees',
     title: 'Employees',

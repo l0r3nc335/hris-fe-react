@@ -11,6 +11,7 @@ export const ROUTES = {
   verifyEmail: '/auth/verify-email',
   verify: '/verify',
   users: '/users',
+  subscriptions: '/subscriptions',
   employees: '/employees',
   employeeDepartments: '/employee-departments',
   departments: '/departments',

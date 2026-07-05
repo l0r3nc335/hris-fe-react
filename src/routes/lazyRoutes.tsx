@@ -33,6 +33,9 @@ export const VerifyEmailPage = lazy(() =>
 export const UsersListPage = lazy(() =>
   import('@/modules/users/pages/ListPage').then((m) => ({ default: m.UsersListPage })),
 )
+export const SubscriptionsListPage = lazy(() =>
+  import('@/modules/subscriptions/pages/ListPage').then((m) => ({ default: m.SubscriptionsListPage })),
+)
 export const EmployeesListPage = lazy(() =>
   import('@/modules/employees/pages/ListPage').then((m) => ({ default: m.EmployeesListPage })),
 )

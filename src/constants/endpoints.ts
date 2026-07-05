@@ -32,6 +32,18 @@ export const endpoints = {
     reactivate: (userId: string) => `/users/${userId}/reactivate`,
     ...lifecycle('/users'),
   },
+  subscriptions: {
+    list: '/subscriptions',
+    byId: id('/subscriptions'),
+    profile: (subscriptionId: string) => `/subscriptions/${subscriptionId}/profile`,
+    search: '/subscriptions/search',
+    searchTrashed: '/subscriptions/trashed/search',
+    active: '/subscriptions/active',
+    inactive: '/subscriptions/inactive',
+    deactivate: (subscriptionId: string) => `/subscriptions/${subscriptionId}/deactivate`,
+    reactivate: (subscriptionId: string) => `/subscriptions/${subscriptionId}/reactivate`,
+    ...lifecycle('/subscriptions'),
+  },
   employees: {
     list: '/employees',
     byId: id('/employees'),

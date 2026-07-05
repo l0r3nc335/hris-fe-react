@@ -15,6 +15,8 @@ export const PERMISSIONS = {
   settingsWrite: 'settings:write',
   reportsRead: 'reports:read',
   billingRead: 'billing:read',
+  subscriptionsRead: 'subscriptions:read',
+  subscriptionsWrite: 'subscriptions:write',
 } as const
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]

@@ -27,6 +27,7 @@ import {
   Building,
   CreditCard,
   Server,
+  Receipt,
 } from 'lucide-react'
 import { ROUTES } from './routes'
 import { PERMISSIONS, type Permission } from './permissions'
@@ -124,6 +125,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Platform',
     items: [
       { label: 'Tenants', path: ROUTES.tenants, icon: Building, permission: PERMISSIONS.tenantsManage },
+      { label: 'Subscriptions', path: ROUTES.subscriptions, icon: Receipt, permission: PERMISSIONS.subscriptionsRead },
       { label: 'Billing', path: ROUTES.billing, icon: CreditCard, permission: PERMISSIONS.billingRead },
       { label: 'System Health', path: ROUTES.systemHealth, icon: Server },
     ],

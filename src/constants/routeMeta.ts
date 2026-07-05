@@ -29,6 +29,11 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     category: 'People & Organization',
     breadcrumbs: [homeCrumb, { label: 'Users' }],
   },
+  [ROUTES.subscriptions]: {
+    title: 'Subscriptions',
+    category: 'Platform',
+    breadcrumbs: [homeCrumb, { label: 'Subscriptions' }],
+  },
   [ROUTES.employees]: {
     title: 'Employees',
     category: 'People & Organization',

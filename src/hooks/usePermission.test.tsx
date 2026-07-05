@@ -33,6 +33,17 @@ describe('usePermission', () => {
     expect(result.current.can(PERMISSIONS.billingRead)).toBe(true)
   })
 
+  it('grants all permissions to superadmin users', () => {
+    const { result } = renderHook(() => usePermission(), {
+      wrapper: createWrapper({
+        ...mockAdminUser,
+        role: 'superadmin',
+        permissions: [],
+      }),
+    })
+    expect(result.current.can(PERMISSIONS.subscriptionsRead)).toBe(true)
+  })
+
   it('checks explicit permissions for non-admin users', () => {
     const { result } = renderHook(() => usePermission(), {
       wrapper: createWrapper({
