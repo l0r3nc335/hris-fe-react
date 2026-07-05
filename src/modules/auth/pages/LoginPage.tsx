@@ -16,24 +16,30 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { ROUTES } from '@/constants/routes'
+import { getPostLoginPath } from '@/utils/postLoginRedirect'
 import { loginSchema, type LoginFormData } from '../schemas'
 
 export function LoginPage(): React.JSX.Element {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
+  const user = useAppSelector((s) => s.auth.user)
   const { status, error } = useAppSelector(selectAuth)
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   })
 
-  if (isAuthenticated) return <Navigate to={ROUTES.home} replace />
+  if (isAuthenticated && user) {
+    return <Navigate to={getPostLoginPath(user)} replace />
+  }
 
   const onSubmit = (data: LoginFormData): void => {
     void dispatch(login(data))
       .then((result) => {
-        if (login.fulfilled.match(result)) navigate(ROUTES.home)
+        if (login.fulfilled.match(result)) {
+          navigate(getPostLoginPath(result.payload.user))
+        }
       })
       .catch(() => undefined)
   }

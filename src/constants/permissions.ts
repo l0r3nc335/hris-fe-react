@@ -15,6 +15,8 @@ export const PERMISSIONS = {
   settingsWrite: 'settings:write',
   reportsRead: 'reports:read',
   billingRead: 'billing:read',
+  mySubscriptionRead: 'my-subscription:read',
+  billingInvoicesRead: 'billing-invoices:read',
   subscriptionsRead: 'subscriptions:read',
   subscriptionsWrite: 'subscriptions:write',
 } as const

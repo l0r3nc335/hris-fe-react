@@ -19,6 +19,11 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     category: 'Overview',
     breadcrumbs: [{ label: 'Dashboard' }],
   },
+  [ROUTES.mySubscription]: {
+    title: 'My Subscription',
+    category: 'Overview',
+    breadcrumbs: [homeCrumb, { label: 'My Subscription' }],
+  },
   [ROUTES.analytics]: {
     title: 'Analytics',
     category: 'Overview',

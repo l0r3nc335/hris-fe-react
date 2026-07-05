@@ -221,6 +221,7 @@ export const endpoints = {
   billing: {
     list: '/billing/invoices',
     byId: id('/billing/invoices'),
+    plans: '/billing/plans',
     subscription: '/billing/subscription',
     subscribe: '/billing/subscribe',
     cancel: '/billing/cancel',

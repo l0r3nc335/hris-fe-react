@@ -76,8 +76,12 @@ export function AppHeader(): React.JSX.Element {
               Ctrl+K
             </kbd>
           </Button>
-          <MessageInbox />
-          <NotificationBell />
+          {user?.role !== 'subscriber' ? (
+            <>
+              <MessageInbox />
+              <NotificationBell />
+            </>
+          ) : null}
           <Button variant="ghost" size="icon" onClick={toggleTheme}>
             {resolvedTheme === 'dark' ? (
               <Sun className="h-4 w-4" />

@@ -119,6 +119,11 @@ export const BenefitsListPage = lazy(() =>
 export const TrainingListPage = lazy(() =>
   import('@/modules/training/pages/ListPage').then((m) => ({ default: m.TrainingListPage })),
 )
+export const MySubscriptionPage = lazy(() =>
+  import('@/modules/mySubscription/pages/MySubscriptionPage').then((m) => ({
+    default: m.MySubscriptionPage,
+  })),
+)
 export const NotFoundPage = lazy(() =>
   import('@/components/NotFoundPage').then((m) => ({ default: m.NotFoundPage })),
 )

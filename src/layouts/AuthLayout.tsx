@@ -2,7 +2,7 @@ import { Outlet, Navigate } from 'react-router-dom'
 import { useAppSelector } from '@/hooks'
 import { PageLoader } from '@/components/PageLoader'
 import { selectAuthStatus, selectIsAuthenticated, selectUser } from '@/slices/authSlice'
-import { ROUTES } from '@/constants/routes'
+import { getPostLoginPath } from '@/utils/postLoginRedirect'
 import { PublicNavbar } from '@/components/layout/PublicNavbar'
 
 export function AuthLayout(): React.JSX.Element {
@@ -21,7 +21,9 @@ export function AuthLayout(): React.JSX.Element {
     )
   }
 
-  if (isAuthenticated) return <Navigate to={ROUTES.home} replace />
+  if (isAuthenticated && user) {
+    return <Navigate to={getPostLoginPath(user)} replace />
+  }
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">

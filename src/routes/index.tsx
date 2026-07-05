@@ -68,6 +68,7 @@ export const router = createBrowserRouter([
             element: <DashboardLayout />,
             children: [
               { path: 'dashboard', element: lazyRouteElement(Lazy.DashboardPage) },
+              dashboardRoute('my-subscription', Lazy.MySubscriptionPage),
               dashboardRoute('users', Lazy.UsersListPage),
               dashboardRoute('subscriptions', Lazy.SubscriptionsListPage),
               dashboardRoute('employees', Lazy.EmployeesListPage),

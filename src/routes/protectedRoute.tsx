@@ -21,7 +21,7 @@ export function ProtectedRoute({
   const status = useAppSelector(selectAuthStatus)
   const { can } = usePermission()
 
-  if (status === 'loading') return <></>
+  if (status === 'loading') return <PageLoader />
   if (!isAuthenticated) {
     if (isKnownRoute(pathname)) {
       return <Navigate to={ROUTES.login} replace />

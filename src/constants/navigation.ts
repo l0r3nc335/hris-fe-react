@@ -28,6 +28,7 @@ import {
   CreditCard,
   Server,
   Receipt,
+  Sparkles,
 } from 'lucide-react'
 import { ROUTES } from './routes'
 import { PERMISSIONS, type Permission } from './permissions'
@@ -52,6 +53,12 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Dashboard', path: ROUTES.home, icon: LayoutDashboard },
       { label: 'Analytics', path: ROUTES.analytics, icon: BarChart3 },
+      {
+        label: 'My Subscription',
+        path: ROUTES.mySubscription,
+        icon: Sparkles,
+        permission: PERMISSIONS.mySubscriptionRead,
+      },
     ],
   },
   {

@@ -1,5 +1,6 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, Navigate } from 'react-router-dom'
 import { useAppSelector } from '@/hooks'
+import { SubscriberOnboardingGuard } from '@/components/SubscriberOnboardingGuard'
 import { cn } from '@/utils/cn'
 import { AppSidebar } from '@/components/layout/AppSidebar'
 import { AppHeader } from '@/components/layout/AppHeader'
@@ -21,7 +22,9 @@ export function DashboardLayout(): React.JSX.Element {
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeader />
         <main className="flex flex-1 flex-col overflow-auto p-6">
-          <Outlet />
+          <SubscriberOnboardingGuard>
+            <Outlet />
+          </SubscriberOnboardingGuard>
         </main>
         <AppFooter />
       </div>
