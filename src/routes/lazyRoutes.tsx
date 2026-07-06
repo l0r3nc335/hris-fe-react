@@ -124,6 +124,11 @@ export const MySubscriptionPage = lazy(() =>
     default: m.MySubscriptionPage,
   })),
 )
+export const PaymentPage = lazy(() =>
+  import('@/modules/mySubscription/pages/PaymentPage').then((m) => ({
+    default: m.PaymentPage,
+  })),
+)
 export const NotFoundPage = lazy(() =>
   import('@/components/NotFoundPage').then((m) => ({ default: m.NotFoundPage })),
 )

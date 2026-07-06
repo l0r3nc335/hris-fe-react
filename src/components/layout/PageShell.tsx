@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { PageHeader } from '@/components/PageHeader'
-import { AppBreadcrumbs } from './AppBreadcrumbs'
+import { AppBreadcrumbs, type AppBreadcrumbItem } from './AppBreadcrumbs'
 import { AppFooter } from './AppFooter'
 
 export interface PageShellProps {
@@ -8,6 +8,8 @@ export interface PageShellProps {
   title?: string
   description?: string
   toolbar?: ReactNode
+  icon?: ReactNode
+  breadcrumbs?: AppBreadcrumbItem[]
   showBreadcrumbs?: boolean
   showFooter?: boolean
 }
@@ -17,16 +19,22 @@ export function PageShell({
   title,
   description,
   toolbar,
+  icon,
+  breadcrumbs,
   showBreadcrumbs = true,
   showFooter = false,
 }: PageShellProps): React.JSX.Element {
   return (
     <div className="flex min-h-full flex-col">
       <div className="flex-1 space-y-4">
-        
-        <AppBreadcrumbs />
+        {showBreadcrumbs ? <AppBreadcrumbs items={breadcrumbs} /> : null}
         {title || description || toolbar ? (
-          <PageHeader title={title ?? ''} description={description} action={toolbar} />
+          <PageHeader
+            title={title ?? ''}
+            description={description}
+            action={toolbar}
+            icon={icon}
+          />
         ) : null}
         {children}
       </div>

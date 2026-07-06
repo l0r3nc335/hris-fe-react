@@ -6,6 +6,8 @@ import { NAV_GROUPS, navGroupContainsPath, type NavItem } from '@/constants/navi
 import { usePermission } from '@/hooks/usePermission'
 import { ROUTES } from '@/constants/routes'
 import { cn } from '@/utils/cn'
+import { isNavItemLockedDuringOnboarding, isSubscriberOnboarding } from '@/utils/subscriberOnboarding'
+import { selectUser } from '@/slices/authSlice'
 import { Input } from '@/components/ui/input'
 import { Button, Tooltip } from '@/ui'
 import {
@@ -36,15 +38,40 @@ function SidebarNavItem({
   item,
   collapsed,
   onNavigate,
+  disabled = false,
 }: {
   item: NavItem
   collapsed: boolean
   onNavigate?: () => void
+  disabled?: boolean
 }): React.JSX.Element {
+  if (disabled) {
+    const content = (
+      <span
+        className={cn(
+          navLinkClassName(collapsed, false),
+          'cursor-not-allowed opacity-40',
+        )}
+        aria-disabled
+      >
+        <item.icon className={cn('h-4 w-4 shrink-0', collapsed && 'my-2 mx-auto')} />
+        {!collapsed ? item.label : null}
+      </span>
+    )
+    if (collapsed) {
+      return (
+        <Tooltip content="Complete subscription first" side="right">
+          {content}
+        </Tooltip>
+      )
+    }
+    return content
+  }
+
   const link = (
     <NavLink
       to={item.path}
-      end={item.path === ROUTES.home}
+      end={item.path === ROUTES.home || item.path === ROUTES.mySubscription}
       onClick={onNavigate}
       className={({ isActive }) => navLinkClassName(collapsed, isActive)}
     >
@@ -70,6 +97,8 @@ export function AppSidebar({
 }: AppSidebarProps): React.JSX.Element {
   const dispatch = useAppDispatch()
   const { pathname } = useLocation()
+  const user = useAppSelector(selectUser)
+  const onboardingLocked = isSubscriberOnboarding(user)
   const expandedGroups = useAppSelector((s) => s.ui.expandedNavGroups)
   const searchQuery = useAppSelector((s) => s.ui.sidebarSearchQuery)
   const { can } = usePermission()
@@ -117,26 +146,40 @@ export function AppSidebar({
                 item={item}
                 collapsed
                 onNavigate={onNavigate}
+                disabled={isNavItemLockedDuringOnboarding(item.path, onboardingLocked, pathname)}
               />
             ))}
           </nav>
         </ScrollArea>
         <div className="border-t border-sidebar-border p-2">
-          <Tooltip content="Settings" side="right">
-            <NavLink
-              to={ROUTES.settings}
-              onClick={onNavigate}
-              className={({ isActive }) => navLinkClassName(true, isActive)}
-            >
-              <Settings className="h-4 w-4" />
-            </NavLink>
-          </Tooltip>
+          {onboardingLocked ? (
+            <Tooltip content="Complete subscription first" side="right">
+              <span className="flex size-9 cursor-not-allowed items-center justify-center rounded-md opacity-40">
+                <Settings className="h-4 w-4" />
+              </span>
+            </Tooltip>
+          ) : (
+            <Tooltip content="Settings" side="right">
+              <NavLink
+                to={ROUTES.settings}
+                onClick={onNavigate}
+                className={({ isActive }) => navLinkClassName(true, isActive)}
+              >
+                <Settings className="h-4 w-4" />
+              </NavLink>
+            </Tooltip>
+          )}
         </div>
       </div>
     )
   }
 
-  const settingsLink = (
+  const settingsLink = onboardingLocked ? (
+    <span className="flex w-full cursor-not-allowed items-center gap-2 opacity-40">
+      <Settings className="h-4 w-4" />
+      Settings
+    </span>
+  ) : (
     <NavLink
       to={ROUTES.settings}
       onClick={onNavigate}
@@ -199,6 +242,7 @@ export function AppSidebar({
                       item={item}
                       collapsed={false}
                       onNavigate={onNavigate}
+                      disabled={isNavItemLockedDuringOnboarding(item.path, onboardingLocked, pathname)}
                     />
                   ))}
                 </CollapsibleContent>

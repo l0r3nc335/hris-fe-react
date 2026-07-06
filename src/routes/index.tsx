@@ -8,6 +8,7 @@ import { ProtectedRoute } from '@/routes/protectedRoute'
 import { PageLoader } from '@/components/PageLoader'
 import { lazyRouteElement } from '@/routes/lazyRouteElement'
 import { ROUTE_SEGMENT_PERMISSIONS } from '@/constants/routePermissions'
+import { PERMISSIONS } from '@/constants/permissions'
 import { ROUTES } from '@/constants/routes'
 import * as Lazy from './lazyRoutes'
 
@@ -69,6 +70,10 @@ export const router = createBrowserRouter([
             children: [
               { path: 'dashboard', element: lazyRouteElement(Lazy.DashboardPage) },
               dashboardRoute('my-subscription', Lazy.MySubscriptionPage),
+              {
+                path: 'my-subscription/payment/:subscriptionId',
+                element: lazyRouteElement(Lazy.PaymentPage, PERMISSIONS.mySubscriptionRead),
+              },
               dashboardRoute('users', Lazy.UsersListPage),
               dashboardRoute('subscriptions', Lazy.SubscriptionsListPage),
               dashboardRoute('employees', Lazy.EmployeesListPage),

@@ -36,6 +36,7 @@ export const ROUTES = {
   tenants: '/tenants',
   billing: '/billing',
   mySubscription: '/my-subscription',
+  mySubscriptionPayment: '/my-subscription/payment/:subscriptionId',
   systemHealth: '/admin/health',
   onboarding: '/onboarding',
   benefits: '/benefits',
